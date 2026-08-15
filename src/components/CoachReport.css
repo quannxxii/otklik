@@ -1,0 +1,81 @@
+.coach-src {
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.coach-report h3 {
+  font-size: 20px;
+  letter-spacing: -0.03em;
+  margin-bottom: 12px;
+}
+
+.coach-actions {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding-left: 18px;
+}
+
+.coach-actions li {
+  display: grid;
+  gap: 2px;
+}
+
+.coach-actions a, .coach-actions b {
+  font-weight: 600;
+}
+
+.coach-actions span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.coach-blocks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.coach-blocks section {
+  border: 1px solid var(--line);
+  padding: 10px 12px;
+}
+
+.coach-blocks h4 {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.coach-blocks p, .coach-blocks li {
+  font-size: 14px;
+}
+
+.coach-blocks ul {
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.coach-err {
+  color: var(--bad);
+  font-size: 14px;
+}
+
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.tag {
+  border: 1px solid var(--line);
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: "IBM Plex Mono", monospace;
+}
+
+@media (max-width: 720px) {
+  .coach-blocks { grid-template-columns: 1fr; }
+}

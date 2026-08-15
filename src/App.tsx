@@ -18,12 +18,14 @@ import { analyzeVacancy, buildWeeklyDigest, heatmapDays, streakCount } from "./l
 import { parseVacancy } from "./lib/parse";
 import { event, pushEvent, weekItems, withStatusChange } from "./lib/crm";
 import { maybeNotifyFollowUps } from "./lib/notify";
+import { clearAiSettings, DEFAULT_AI, loadAiSettings, pingAi, saveAiSettings, type AiSettings } from "./lib/llm";
 import { CommandPalette } from "./components/CommandPalette";
 import { Onboarding } from "./components/Onboarding";
 import { DetailDrawer } from "./components/DetailDrawer";
 import { RadarPage } from "./pages/Radar";
 import { InsightsPage } from "./pages/Insights";
 import { WeekPage } from "./pages/Week";
+import { CoachPage } from "./pages/Coach";
 import "./App.css";
 
 export default function App() {
@@ -50,6 +52,7 @@ export default function App() {
     { id: "radar", label: "Vacancy Radar", hint: "матч по вакансии", run: () => navigate("/app/radar") },
     { id: "track", label: "Трекер", hint: "таблица", run: () => navigate("/app") },
     { id: "week", label: "Неделя", hint: "собесы и тестовые", run: () => navigate("/app/week") },
+    { id: "coach", label: "Коуч", hint: "разбор поиска", run: () => navigate("/app/coach") },
     { id: "insights", label: "Инсайты", hint: "воронка", run: () => navigate("/app/insights") },
     { id: "board", label: "Канбан", hint: "pipeline", run: () => navigate("/app?view=kanban") },
     { id: "follow", label: "Follow-up", hint: "кто молчит", run: () => navigate("/app/follow") },
@@ -79,6 +82,7 @@ export default function App() {
             <NavLink to="/app/radar">Radar</NavLink>
             <NavLink to="/app/week">Неделя</NavLink>
             <NavLink to="/app/follow">Follow-up</NavLink>
+            <NavLink to="/app/coach">Коуч</NavLink>
             <NavLink to="/app/insights">Инсайты</NavLink>
             <NavLink to="/app/letters">Письма</NavLink>
             <NavLink to="/app/settings">Профиль</NavLink>
@@ -95,6 +99,7 @@ export default function App() {
           <Route path="radar" element={<RadarPage />} />
           <Route path="week" element={<WeekPage />} />
           <Route path="follow" element={<FollowPage />} />
+          <Route path="coach" element={<CoachPage />} />
           <Route path="insights" element={<InsightsPage />} />
           <Route path="letters" element={<LettersPage />} />
           <Route path="platforms" element={<PlatformsPage />} />
@@ -961,10 +966,13 @@ function PlatformsPage() {
 function SettingsPage() {
   const { profile, setProfile, setApps, showToast } = useStore();
   const [form, setForm] = useState(profile);
+  const [ai, setAi] = useState<AiSettings>(() => loadAiSettings());
+  const [aiBusy, setAiBusy] = useState(false);
 
   useEffect(() => setForm(profile), [profile]);
 
   return (
+    <div>
     <div className="card">
       <h2>Профиль</h2>
       <p className="tiny">Стек нужен Radar’у. Всё только в вашем браузере.</p>
@@ -1057,6 +1065,81 @@ function SettingsPage() {
           Очистить отклики
         </button>
       </div>
+    </div>
+
+    <div className="card" style={{ marginTop: 12 }}>
+      <h2>ИИ-коуч</h2>
+      <p className="tiny">
+        Свой ключ OpenAI-совместимого API. Живёт только в этом браузере, не попадает в CSV/JSON бэкап откликов.
+        Запрос идёт с устройства на указанный URL. Без ключа коуч всё равно работает локально.
+      </p>
+      <div className="grid-2" style={{ marginTop: 12 }}>
+        <div className="field" style={{ gridColumn: "1 / -1" }}>
+          <label>API key</label>
+          <input
+            type="password"
+            autoComplete="off"
+            value={ai.apiKey}
+            onChange={(e) => setAi({ ...ai, apiKey: e.target.value })}
+            placeholder="sk-…"
+          />
+        </div>
+        <div className="field">
+          <label>Base URL</label>
+          <input
+            value={ai.baseUrl}
+            onChange={(e) => setAi({ ...ai, baseUrl: e.target.value })}
+            placeholder={DEFAULT_AI.baseUrl}
+          />
+        </div>
+        <div className="field">
+          <label>Модель</label>
+          <input
+            value={ai.model}
+            onChange={(e) => setAi({ ...ai, model: e.target.value })}
+            placeholder={DEFAULT_AI.model}
+          />
+        </div>
+      </div>
+      <div className="actions">
+        <button
+          className="btn"
+          type="button"
+          onClick={() => {
+            saveAiSettings(ai);
+            showToast("Ключ сохранён локально");
+          }}
+        >
+          Сохранить ключ
+        </button>
+        <button
+          className="btn ghost"
+          type="button"
+          disabled={aiBusy || !ai.apiKey.trim()}
+          onClick={() => {
+            saveAiSettings(ai);
+            setAiBusy(true);
+            void pingAi(ai)
+              .then((headline) => showToast(headline || "Ок, модель отвечает"))
+              .catch((e) => showToast(e instanceof Error ? e.message : "Пинг не прошёл"))
+              .finally(() => setAiBusy(false));
+          }}
+        >
+          {aiBusy ? "Проверяю…" : "Проверить"}
+        </button>
+        <button
+          className="btn danger"
+          type="button"
+          onClick={() => {
+            clearAiSettings();
+            setAi({ ...DEFAULT_AI });
+            showToast("Ключ удалён");
+          }}
+        >
+          Удалить ключ
+        </button>
+      </div>
+    </div>
     </div>
   );
 }

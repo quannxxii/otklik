@@ -1,0 +1,25 @@
+.coach-page .eyebrow {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.coach-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.coach-head h2 {
+  font-size: clamp(24px, 4vw, 34px);
+  letter-spacing: -0.04em;
+  margin: 6px 0 8px;
+}
+
+.coach-body {
+  padding: 18px;
+}

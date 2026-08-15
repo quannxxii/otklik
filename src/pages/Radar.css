@@ -110,6 +110,11 @@
   margin-top: auto;
 }
 
+.radar-coach {
+  margin-top: 12px;
+  padding: 16px;
+}
+
 @media (max-width: 900px) {
   .radar-grid { grid-template-columns: 1fr; }
   .radar-ta, .radar-score { min-height: 240px; }

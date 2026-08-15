@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../store";
 import { SAMPLE_JD } from "../types";
@@ -6,17 +6,28 @@ import { analyzeVacancy } from "../lib/match";
 import { parseVacancy } from "../lib/parse";
 import { buildFromRadar, letterFor } from "../lib/crm";
 import { copyText } from "../lib/storage";
+import { buildSnapshot, localCoach, type CoachReport } from "../lib/coach";
+import { loadAiSettings, llmCoach } from "../lib/llm";
+import { CoachReportView } from "../components/CoachReport";
 import "./Radar.css";
 
 export function RadarPage() {
   const { apps, setApps, profile, templates, showToast } = useStore();
   const navigate = useNavigate();
   const [jd, setJd] = useState("");
+  const [coach, setCoach] = useState<CoachReport | null>(null);
+  const [coachErr, setCoachErr] = useState<string | null>(null);
+  const [coachBusy, setCoachBusy] = useState(false);
   const parsed = useMemo(() => (jd.trim() ? parseVacancy(jd) : null), [jd]);
   const result = useMemo(
     () => (jd.trim() ? analyzeVacancy(jd, profile.skills) : null),
     [jd, profile.skills],
   );
+
+  useEffect(() => {
+    setCoach(null);
+    setCoachErr(null);
+  }, [jd]);
 
   function fillDemo() {
     setJd(SAMPLE_JD);
@@ -89,6 +100,52 @@ export function RadarPage() {
 
   const company = parsed?.company || result?.guessedCompany;
   const role = parsed?.role || result?.guessedRole;
+  const hasKey = Boolean(loadAiSettings().apiKey);
+
+  function runLocalCoach() {
+    if (!result || !parsed) return;
+    const snap = buildSnapshot(apps, profile, {
+      jd,
+      match: result,
+      company,
+      role,
+      salary: parsed.salary,
+      city: parsed.city,
+      stack: parsed.stack,
+    });
+    setCoachErr(null);
+    setCoach(localCoach(snap));
+  }
+
+  async function runLlmCoach() {
+    if (!result || !parsed) return;
+    const settings = loadAiSettings();
+    if (!settings.apiKey.trim()) {
+      setCoachErr("Нет ключа — локальный разбор уже можно. Ключ в Профиле.");
+      runLocalCoach();
+      return;
+    }
+    setCoachBusy(true);
+    setCoachErr(null);
+    try {
+      const snap = buildSnapshot(apps, profile, {
+        jd,
+        match: result,
+        company,
+        role,
+        salary: parsed.salary,
+        city: parsed.city,
+        stack: parsed.stack,
+      });
+      setCoach(await llmCoach(snap, settings));
+      showToast("ИИ по вакансии готов");
+    } catch (e) {
+      setCoachErr(e instanceof Error ? e.message : "Не вышло вызвать модель");
+      runLocalCoach();
+    } finally {
+      setCoachBusy(false);
+    }
+  }
 
   return (
     <div className="radar">
@@ -162,6 +219,12 @@ export function RadarPage() {
                 <button type="button" className="btn ghost" onClick={() => void copyTargeted()}>
                   Письмо
                 </button>
+                <button type="button" className="btn ghost" onClick={runLocalCoach}>
+                  Спросить коуча
+                </button>
+                <button type="button" className="btn ghost" onClick={() => void runLlmCoach()} disabled={coachBusy}>
+                  {coachBusy ? "Думаю…" : hasKey ? "Углубить с ИИ" : "ИИ (нужен ключ)"}
+                </button>
                 <Link className="btn ghost" to="/app/settings">
                   Стек
                 </Link>
@@ -170,6 +233,12 @@ export function RadarPage() {
           )}
         </div>
       </div>
+
+      {(coach || coachErr) && (
+        <div className="card radar-coach">
+          <CoachReportView report={coach} error={coachErr} />
+        </div>
+      )}
     </div>
   );
 }
