@@ -194,50 +194,53 @@ button { cursor: pointer; }
 .pill.draft { color: var(--muted); }
 
 .score-ring {
-  width: 132px;
-  height: 132px;
+  width: 136px;
+  height: 136px;
   flex-shrink: 0;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
+  border-radius: 50%;
+  position: relative;
   background:
-    radial-gradient(circle at center, #fff 0 56%, transparent 57%),
-    conic-gradient(var(--accent) var(--p), #d9e0ef 0);
+    radial-gradient(circle at center, #fff 0 62%, transparent 63%),
+    conic-gradient(from -90deg, var(--accent) var(--p), #d9e0ef 0);
 }
 
 .score-ring-label {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  line-height: 1;
-  transform: translateY(-1px);
+  position: absolute;
+  inset: 0;
 }
 
 .score-ring strong {
-  font-family: var(--display);
-  font-size: 34px;
-  font-weight: 800;
-  letter-spacing: -0.06em;
-  line-height: 0.85;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
 .score-ring-label > span {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 16px);
+  transform: translateX(-50%);
   font-family: var(--mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
+  font-size: 9px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted);
-  margin-top: 4px;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 @media (max-width: 800px) {
   .grid-2, .grid-4 { grid-template-columns: 1fr; }
   .container { width: min(1120px, calc(100% - 24px)); }
   :root { background-attachment: scroll; }
-  .score-ring { width: 112px; height: 112px; }
-  .score-ring strong { font-size: 28px; }
+  .score-ring { width: 120px; height: 120px; }
+  .score-ring strong { font-size: 24px; }
+  .score-ring-label > span { top: calc(50% + 14px); }
 }

@@ -43,13 +43,64 @@
       title: "Под вакансию",
       body: "Привет! Я {{name}}.\n\nУвидел «{{vacancy}}» в {{company}} — откликаюсь точечно.\nВ требованиях вижу {{matched}}. Это мой основной контур: {{role}}, {{city}}.\n\nГотов тестовое или короткий созвон.\n\n{{links}}",
     },
+    {
+      id: "followup",
+      title: "Follow-up",
+      body: "Привет! Несколько дней назад откликался на «{{vacancy}}» в {{company}}.\nПодскажите, резюме дошло? Если удобно — готов тестовое или короткий созвон.\n\n{{name}}\n{{links}}",
+    },
+  ];
+
+  const PRO_TEMPLATES = [
+    {
+      id: "pro-senior",
+      title: "Pro · Senior",
+      body: "Привет! Я {{name}}, {{role}}, {{city}}.\n\nСмотрю «{{vacancy}}» в {{company}}. По стеку пересечение: {{matched}}.\nВ коммерции закрывал фичи end-to-end — детали в портфолио.\n\nГотов короткий созвон или тестовое на этой неделе.\n\n{{links}}",
+    },
+    {
+      id: "pro-cold",
+      title: "Pro · Cold HR",
+      body: "Привет! Нашёл вакансию «{{vacancy}}» — {{company}}.\n\nКоротко: {{role}}, {{city}}. Релевантный стек: {{matched}}.\nЕсли резюме ок — готов тестовое без долгой переписки.\n\n{{name}}\n{{links}}",
+    },
+    {
+      id: "pro-vue",
+      title: "Pro · Vue / PHP",
+      body: "Привет! Я {{name}}, fullstack (Vue / PHP), {{city}}.\n\nОтклик на «{{vacancy}}» в {{company}}. Пересечения: {{matched}}.\nУмею довести фичу с клиента до бэка и продакшена.\n\nТестовое могу взять сразу.\n\n{{links}}",
+    },
+    {
+      id: "pro-flutter",
+      title: "Pro · Flutter",
+      body: "Привет! Я {{name}}. Flutter / Dart, {{city}}.\n\nИнтересна «{{vacancy}}» в {{company}}. По стеку: {{matched}}.\nЕсть свой продукт на Flutter + Supabase — могу показать.\n\nГотов тестовое или короткий созвон.\n\n{{links}}",
+    },
+  ];
+
+  const SKILL_CATALOG = [
+    { label: "TypeScript", aliases: ["typescript", "ts"] },
+    { label: "JavaScript", aliases: ["javascript", "js"] },
+    { label: "Next.js", aliases: ["next.js", "nextjs"] },
+    { label: "Vue", aliases: ["vue.js", "vuejs", "vue 3", "vue"] },
+    { label: "React", aliases: ["react.js", "reactjs", "react"] },
+    { label: "Flutter", aliases: ["flutter"] },
+    { label: "Dart", aliases: ["dart"] },
+    { label: "PHP", aliases: ["php", "laravel"] },
+    { label: "PostgreSQL", aliases: ["postgresql", "postgres"] },
+    { label: "Supabase", aliases: ["supabase"] },
+    { label: "Docker", aliases: ["docker"] },
+    { label: "Python", aliases: ["python", "fastapi"] },
+    { label: "Node.js", aliases: ["node.js", "nodejs"] },
   ];
 
   function uid() {
     return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
-  function today() {
-    return new Date().toISOString().slice(0, 10);
+  function today(d) {
+    const x = d || new Date();
+    const y = x.getFullYear();
+    const m = String(x.getMonth() + 1).padStart(2, "0");
+    const day = String(x.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  function nowIso() {
+    return new Date().toISOString();
   }
   function addDays(iso, n) {
     const d = new Date(`${iso}T12:00:00`);
@@ -129,23 +180,93 @@
     };
   }
 
+  function skillInText(alias, low) {
+    const a = normalize(alias).trim();
+    if (!a) return false;
+    const re = new RegExp(`(^|[^a-zа-я0-9+.#])${escapeReg(a)}([^a-zа-я0-9+.#]|$)`, "i");
+    return re.test(low);
+  }
+
+  function extractVacancySkills(jd, hintStack) {
+    const low = ` ${normalize(jd)} `;
+    const found = [];
+    const seen = new Set();
+    for (const item of SKILL_CATALOG) {
+      if (item.aliases.some((al) => skillInText(al, low))) {
+        const key = normalize(item.label);
+        if (!seen.has(key)) {
+          seen.add(key);
+          found.push(item.label);
+        }
+      }
+    }
+    for (const h of hintStack || []) {
+      const label = String(h || "").trim();
+      if (label.length < 2 || label.length > 28) continue;
+      const key = normalize(label);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      found.push(label);
+    }
+    return found;
+  }
+
+  function userHasSkill(userSkills, vacancySkill) {
+    const v = normalize(vacancySkill);
+    return userSkills.some((u) => {
+      const un = normalize(u);
+      if (!un) return false;
+      if (un === v) return true;
+      const cat = SKILL_CATALOG.find(
+        (c) => normalize(c.label) === v || c.aliases.some((al) => normalize(al) === v),
+      );
+      if (cat && (normalize(cat.label) === un || cat.aliases.some((al) => normalize(al) === un))) return true;
+      return false;
+    });
+  }
+
+  function isProLikely() {
+    try {
+      const raw = localStorage.getItem("otklik-pro-v1");
+      if (!raw) return false;
+      const s = JSON.parse(raw);
+      return Boolean(s && s.key && /^OTK[A-F0-9]{8}$/i.test(String(s.key).replace(/[^A-Z0-9]/gi, "")));
+    } catch {
+      return false;
+    }
+  }
+
   function analyzeVacancy(jd, skillsCsv) {
     const text = String(jd || "").trim();
-    const low = normalize(text);
-    const skills = parseSkills(skillsCsv);
+    const userSkills = parseSkills(skillsCsv);
+    const vacancySkills = extractVacancySkills(text, []);
     const matched = [];
     const missing = [];
-    for (const skill of skills) {
-      const s = normalize(skill);
-      if (!s) continue;
-      const re = new RegExp(`(^|[^a-zа-я0-9+.#])${escapeReg(s)}([^a-zа-я0-9+.#]|$)`, "i");
-      if (re.test(low) || low.includes(s)) matched.push(skill);
-      else missing.push(skill);
+    for (const vs of vacancySkills) {
+      if (userHasSkill(userSkills, vs)) matched.push(vs);
+      else missing.push(vs);
     }
-    const score = skills.length === 0 ? 0 : Math.round((matched.length / Math.max(skills.length, 1)) * 100);
+    let score = 0;
+    if (vacancySkills.length === 0) {
+      const low = normalize(text);
+      for (const skill of userSkills) {
+        if (skillInText(skill, low)) matched.push(skill);
+      }
+      score = matched.length === 0 ? 0 : Math.min(100, 20 + matched.length * 12);
+    } else {
+      score = Math.round((matched.length / vacancySkills.length) * 100);
+    }
+    const hits = matched.map(normalize);
+    const pro = isProLikely();
     let suggestedTpl = "fullstack";
-    if (matched.some((m) => /flutter|dart/i.test(m))) suggestedTpl = "targeted";
-    else if (matched.some((m) => /vue|react|frontend|next/i.test(m)) && !matched.some((m) => /php|backend/i.test(m)))
+    if (pro) {
+      if (hits.some((m) => /flutter|dart/.test(m))) suggestedTpl = "pro-flutter";
+      else if (hits.some((m) => /vue|php|laravel/.test(m))) suggestedTpl = "pro-vue";
+      else if (score >= 70) suggestedTpl = "pro-senior";
+      else if (score < 40) suggestedTpl = "pro-cold";
+      else suggestedTpl = "targeted";
+    } else if (hits.some((m) => /flutter|dart/.test(m))) suggestedTpl = "targeted";
+    else if (hits.some((m) => /vue|react|frontend|next/.test(m)) && !hits.some((m) => /php|backend/.test(m)))
       suggestedTpl = "frontend";
     else if (matched.length >= 3) suggestedTpl = "targeted";
     else if (matched.length <= 1) suggestedTpl = "short";
@@ -153,7 +274,7 @@
     if (score >= 70) verdict = "Сильный матч. Откликайся сегодня, письмо пиши под стек.";
     else if (score >= 45) verdict = "Нормальный матч. В письме выдели пересечения.";
     else if (score >= 25) verdict = "Слабовато. Откликайся только если очень хочешь компанию.";
-    return { score, matched, missing: missing.slice(0, 12), suggestedTpl, verdict };
+    return { score, matched, missing: missing.slice(0, 12), suggestedTpl, verdict, vacancySkills };
   }
 
   function buildLinks(profile) {
@@ -184,14 +305,18 @@
   }
 
   function letterFor(templates, tplId, vars) {
-    const list = templates && templates.length ? templates : DEFAULT_TEMPLATES;
+    let list = templates && templates.length ? templates.slice() : DEFAULT_TEMPLATES.slice();
+    if (isProLikely()) {
+      const ids = new Set(list.map((t) => t.id));
+      for (const t of PRO_TEMPLATES) if (!ids.has(t.id)) list.push(t);
+    }
     const tpl = list.find((t) => t.id === tplId) || list.find((t) => t.id === "targeted") || list[0];
     return tpl ? renderLetter(tpl.body, vars) : "";
   }
 
   function buildApp({ parsed, match, profile, jd, status }) {
     const now = today();
-    const st = status || "sent";
+    const st = status || "draft";
     const followDays = profile.followDays || 5;
     return {
       id: uid(),
@@ -202,9 +327,16 @@
       url: parsed.url || "",
       date: now,
       followUp: st === "sent" ? addDays(now, followDays) : "",
-      note: match.matched.length ? `match ${match.score}% · ${match.matched.join(", ")}` : "из расширения",
+      note:
+        st === "sent"
+          ? match.matched.length
+            ? `match ${match.score}% · ${match.matched.join(", ")}`
+            : "из расширения"
+          : match.matched.length
+            ? `письмо готово · match ${match.score}% — отправь на площадке сам`
+            : "письмо скопировано — отправь на площадке сам",
       letterTpl: match.suggestedTpl,
-      updatedAt: now,
+      updatedAt: nowIso(),
       fitScore: match.score,
       salary: parsed.salary || "",
       city: parsed.city || "",
@@ -213,9 +345,12 @@
       timeline: [
         {
           id: uid(),
-          at: new Date().toISOString(),
+          at: nowIso(),
           type: st === "sent" ? "sent" : "created",
-          text: st === "sent" ? "Пакет из расширения: письмо скопировано" : "Черновик из расширения",
+          text:
+            st === "sent"
+              ? "Отмечено как отправлено из расширения"
+              : "Пакет из расширения: письмо в буфер, черновик — подтверди отправку на hh",
         },
       ],
     };
@@ -223,8 +358,11 @@
 
   function mergeApps(a, b) {
     const map = new Map();
-    const keyOf = (x) =>
-      (x.url && String(x.url).split("?")[0]) || x.id || `${String(x.company).toLowerCase()}|${String(x.role || "").toLowerCase()}`;
+    const keyOf = (x) => {
+      if (x.url) return `url:${String(x.url).split("?")[0]}`;
+      if (x.id) return `id:${x.id}`;
+      return `cr:${String(x.company).toLowerCase()}|${String(x.role || "").toLowerCase()}|${x.date || ""}`;
+    };
     for (const x of [...(a || []), ...(b || [])]) {
       if (!x || !x.company) continue;
       const k = keyOf(x);
@@ -234,21 +372,25 @@
     return [...map.values()];
   }
 
+  function mergeTemplates(a, b) {
+    const map = new Map();
+    for (const t of [...DEFAULT_TEMPLATES, ...(a || []), ...(b || [])]) {
+      if (!t || !t.id) continue;
+      if (String(t.id).startsWith("pro-")) continue;
+      map.set(t.id, t);
+    }
+    return [...map.values()];
+  }
+
   function mergeState(local, remote) {
     const aTs = Number(local.syncAt || 0);
     const bTs = Number(remote.syncAt || 0);
     const newer = bTs >= aTs ? remote : local;
     const older = newer === remote ? local : remote;
-    const templates =
-      newer.templates && newer.templates.length
-        ? newer.templates
-        : older.templates && older.templates.length
-          ? older.templates
-          : DEFAULT_TEMPLATES;
     return {
       apps: mergeApps(local.apps, remote.apps),
       profile: { ...DEFAULT_PROFILE, ...(older.profile || {}), ...(newer.profile || {}) },
-      templates,
+      templates: mergeTemplates(local.templates, remote.templates),
       syncAt: Math.max(aTs, bTs, Date.now()),
     };
   }
@@ -388,8 +530,11 @@
     const box = findLetterBox();
     if (!box) return false;
     box.focus();
-    box.value = text;
-    box.dispatchEvent(new Event("input", { bubbles: true }));
+    const proto = Object.getPrototypeOf(box);
+    const desc = Object.getOwnPropertyDescriptor(proto, "value");
+    if (desc && desc.set) desc.set.call(box, text);
+    else box.value = text;
+    box.dispatchEvent(new InputEvent("input", { bubbles: true, data: text, inputType: "insertText" }));
     box.dispatchEvent(new Event("change", { bubbles: true }));
     return true;
   }

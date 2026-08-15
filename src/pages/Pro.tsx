@@ -8,6 +8,7 @@ import {
   TG_URL,
   WEEK_RHYTHM,
   activateProKey,
+  canMint,
   clearPro,
   mintProKey,
   telegramPayLink,
@@ -20,6 +21,8 @@ export function ProPage() {
   const [key, setKey] = useState("");
   const [busy, setBusy] = useState(false);
   const [minted, setMinted] = useState("");
+  const [sellerPass, setSellerPass] = useState("");
+  const [mintOk, setMintOk] = useState(false);
   const showMint = new URLSearchParams(window.location.search).has("mint");
 
   async function activate() {
@@ -43,8 +46,8 @@ export function ProPage() {
           <p className="mono eyebrow">один продукт</p>
           <h2>{isPro ? "Pro включён" : "Письма и ритм. Не коучинг."}</h2>
           <p className="muted">
-            Трекер бесплатный. Pro разово открывает шаблоны, пакет follow-up и копию плана коуча.
-            Это инструмент в браузере — не созвоны и не настройка под ключ.
+            Трекер бесплатный. Pro разово открывает шаблоны (в т.ч. в Radar), пакет follow-up и копию плана коуча.
+            Ключ привязан к этому браузеру — смена Chrome / очистка сайта = нужна повторная активация тем же ключом.
           </p>
         </div>
         {isPro && <span className="pro-badge mono">PRO</span>}
@@ -65,7 +68,7 @@ export function ProPage() {
           </Link>
         </article>
         <article className="featured">
-          <p className="mono tiny">разово · навсегда</p>
+          <p className="mono tiny">разово · в этом браузере</p>
           <h3>Pro</h3>
           <p className="pro-price">{PRO_PRICE}</p>
           <ul>
@@ -89,7 +92,7 @@ export function ProPage() {
             <li>Перевод {PRO_PRICE}</li>
             <li>Ключ OTK-····-···· сюда</li>
           </ol>
-          <p className="tiny">Резюме на сервер не уезжает. Ключ живёт только в этом браузере.</p>
+          <p className="tiny">Ключ проверяется криптографически при каждом запуске. Флаг «active» без ключа не работает.</p>
           <div className="pro-activate-row">
             <input
               value={key}
@@ -152,22 +155,48 @@ export function ProPage() {
       {showMint && (
         <section className="card" style={{ marginTop: 12 }}>
           <h3>Выдать ключ</h3>
-          <p className="tiny">Только продавец: /app/pro?mint=1</p>
-          <button
-            type="button"
-            className="btn"
-            onClick={() => {
-              void mintProKey()
-                .then(async (k) => {
-                  setMinted(k);
-                  await copyText(k);
-                  showToast("Ключ скопирован");
-                })
-                .catch((e) => showToast(e instanceof Error ? e.message : "Ошибка"));
-            }}
-          >
-            Сгенерировать ключ
-          </button>
+          <p className="tiny">Продавец: /app/pro?mint=1 + пароль. Не публикуй пароль.</p>
+          {!mintOk ? (
+            <div className="pro-activate-row">
+              <input
+                type="password"
+                value={sellerPass}
+                onChange={(e) => setSellerPass(e.target.value)}
+                placeholder="пароль продавца"
+                autoComplete="off"
+              />
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  void canMint(sellerPass).then((ok) => {
+                    if (ok) {
+                      setMintOk(true);
+                      showToast("Ок, можно mint");
+                    } else showToast("Пароль неверный");
+                  });
+                }}
+              >
+                Войти
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                void mintProKey()
+                  .then(async (k) => {
+                    setMinted(k);
+                    await copyText(k);
+                    showToast("Ключ скопирован");
+                  })
+                  .catch((e) => showToast(e instanceof Error ? e.message : "Ошибка"));
+              }}
+            >
+              Сгенерировать ключ
+            </button>
+          )}
           {minted && <p className="mono" style={{ marginTop: 10 }}>{minted}</p>}
         </section>
       )}

@@ -356,15 +356,18 @@ export function emptyReport(): CoachReport {
 export function coerceReport(raw: unknown, source: "local" | "llm"): CoachReport {
   const o = raw && typeof raw === "object" ? (raw as Record<string, unknown>) : {};
   const actionsIn = Array.isArray(o.actions) ? o.actions : [];
-  const actions: CoachAction[] = actionsIn.slice(0, 5).map((item, i) => {
-    const a = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
-    return {
-      id: String(a.id || `a${i}`),
-      title: String(a.title || "").slice(0, 160),
-      why: String(a.why || "").slice(0, 280),
-      href: typeof a.href === "string" ? a.href : undefined,
-    };
-  }).filter((a) => a.title);
+  const actions: CoachAction[] = actionsIn
+    .slice(0, 5)
+    .map((item, i) => {
+      const a = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+      return {
+        id: String(a.id || `a${i}`),
+        title: String(a.title || "").slice(0, 160),
+        why: String(a.why || "").slice(0, 280),
+        href: safeAppHref(typeof a.href === "string" ? a.href : undefined),
+      };
+    })
+    .filter((a) => a.title);
   const today = Array.isArray(o.today) ? o.today.map((x) => String(x)).filter(Boolean).slice(0, 8) : [];
   const gaps = Array.isArray(o.gaps) ? o.gaps.map((x) => String(x)).filter(Boolean).slice(0, 8) : [];
   return {
@@ -377,4 +380,14 @@ export function coerceReport(raw: unknown, source: "local" | "llm"): CoachReport
     letter: String(o.letter || "").slice(0, 500),
     gaps,
   };
+}
+
+/** Only in-app relative paths — blocks javascript: and external URLs from LLM. */
+export function safeAppHref(href?: string) {
+  if (!href) return undefined;
+  const h = href.trim();
+  if (!h.startsWith("/app")) return undefined;
+  if (h.includes("://") || h.includes("\\") || h.includes("..")) return undefined;
+  if (!/^\/app(\/[\w\-./?]*)?$/.test(h)) return undefined;
+  return h;
 }

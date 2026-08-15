@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { CoachReport } from "../lib/coach";
+import { safeAppHref } from "../lib/coach";
 import "./CoachReport.css";
 
 export function CoachReportView({ report, error }: { report: CoachReport | null; error?: string | null }) {
@@ -14,12 +15,15 @@ export function CoachReportView({ report, error }: { report: CoachReport | null;
       {report?.headline && <h3>{report.headline}</h3>}
       {!!report?.actions.length && (
         <ol className="coach-actions">
-          {report.actions.map((a) => (
-            <li key={a.id}>
-              {a.href ? <Link to={a.href}>{a.title}</Link> : <b>{a.title}</b>}
-              <span>{a.why}</span>
-            </li>
-          ))}
+          {report.actions.map((a) => {
+            const href = safeAppHref(a.href);
+            return (
+              <li key={a.id}>
+                {href ? <Link to={href}>{a.title}</Link> : <b>{a.title}</b>}
+                <span>{a.why}</span>
+              </li>
+            );
+          })}
         </ol>
       )}
       {report && (

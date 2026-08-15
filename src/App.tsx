@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, NavLink, Route, Routes, useNavigate } from "react-router-dom";
 import { useStore } from "./store";
 import type { Application, Status } from "./types";
-import { PLATFORMS, STATUS_LABEL, STATUS_ORDER } from "./types";
+import { DEFAULT_PROFILE, DEFAULT_TEMPLATES, PLATFORMS, STATUS_LABEL, STATUS_ORDER } from "./types";
 import {
   addDays,
   appsToCsv,
@@ -10,10 +10,13 @@ import {
   daysBetween,
   downloadText,
   needsFollowUp,
+  parseBackup,
   renderLetter,
+  sanitizeApps,
   today,
   uid,
 } from "./lib/storage";
+import { stripProTemplates } from "./lib/pro";
 import { analyzeVacancy, buildWeeklyDigest, heatmapDays, streakCount } from "./lib/match";
 import { parseVacancy } from "./lib/parse";
 import { event, pushEvent, weekItems, withStatusChange } from "./lib/crm";
@@ -118,7 +121,7 @@ export default function App() {
 }
 
 function TrackerPage() {
-  const { apps, setApps, profile, templates, showToast } = useStore();
+  const { apps, setApps, profile, setProfile, templates, setTemplates, showToast, isPro } = useStore();
   const navigate = useNavigate();
   const [view, setView] = useState<"table" | "kanban">(() =>
     new URLSearchParams(window.location.search).get("view") === "kanban" ? "kanban" : "table",
@@ -147,35 +150,6 @@ function TrackerPage() {
     jdRaw: "",
   };
   const [form, setForm] = useState(emptyForm);
-
-  useEffect(() => {
-    const raw = sessionStorage.getItem("otklik-radar-draft");
-    if (!raw) return;
-    sessionStorage.removeItem("otklik-radar-draft");
-    try {
-      const d = JSON.parse(raw) as {
-        company: string;
-        role: string;
-        url: string;
-        letterTpl: string;
-        fitScore: number;
-        matched: string;
-      };
-      setForm((f) => ({
-        ...f,
-        company: d.company,
-        role: d.role,
-        url: d.url,
-        letterTpl: d.letterTpl,
-        fitScore: d.fitScore,
-        note: d.matched ? `match ${d.fitScore}% · ${d.matched}` : f.note,
-        status: "draft",
-      }));
-      showToast("Черновик из Radar");
-    } catch {
-      /* ignore */
-    }
-  }, [showToast]);
 
   useEffect(() => {
     const open = new URLSearchParams(window.location.search).get("open");
@@ -215,7 +189,7 @@ function TrackerPage() {
     const raw = paste.trim();
     if (!raw) return;
     const parsed = parseVacancy(raw);
-    const match = analyzeVacancy(raw, profile.skills);
+    const match = analyzeVacancy(raw, profile.skills, { isPro, hintStack: parsed.stack });
     setForm((f) => ({
       ...f,
       company: parsed.company || match.guessedCompany || f.company,
@@ -253,8 +227,7 @@ function TrackerPage() {
       followUp,
       note: form.note.trim(),
       letterTpl: form.letterTpl,
-      updatedAt: today(),
-      fitScore: form.fitScore,
+      updatedAt: new Date().toISOString(),
       salary: form.salary || prev?.salary,
       city: form.city || prev?.city,
       stack: form.stack || prev?.stack,
@@ -561,15 +534,46 @@ function TrackerPage() {
             type="button"
             onClick={() => {
               downloadText(
-                JSON.stringify({ profile, templates, apps }, null, 2),
+                JSON.stringify({ version: 1, profile, templates: stripProTemplates(templates), apps }, null, 2),
                 `otklik-backup-${today()}.json`,
                 "application/json",
               );
-              showToast("Бэкап");
+              showToast("Бэкап скачан — храни файл, в браузере данные не бэкапятся сами");
             }}
           >
             Бэкап
           </button>
+          <label className="btn ghost" style={{ cursor: "pointer" }}>
+            Восстановить
+            <input
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file) return;
+                void file.text().then((raw) => {
+                  try {
+                    const data = parseBackup(raw);
+                    const nextApps = sanitizeApps(data.apps);
+                    const nextProfile = { ...DEFAULT_PROFILE, ...profile, ...(data.profile || {}) };
+                    const nextTpl =
+                      Array.isArray(data.templates) && data.templates.length
+                        ? stripProTemplates(data.templates)
+                        : DEFAULT_TEMPLATES;
+                    if (!confirm(`Восстановить ${nextApps.length} откликов? Текущие данные заменятся.`)) return;
+                    setApps(nextApps);
+                    setProfile(nextProfile);
+                    setTemplates(nextTpl);
+                    showToast("Бэкап восстановлен");
+                  } catch (err) {
+                    showToast(err instanceof Error ? err.message : "Битый JSON");
+                  }
+                });
+              }}
+            />
+          </label>
         </div>
       </form>
 
@@ -1134,8 +1138,9 @@ function SettingsPage() {
     <div className="card" style={{ marginTop: 12 }}>
       <h2>ИИ-коуч</h2>
       <p className="tiny">
-        Свой ключ OpenAI-совместимого API. Живёт только в этом браузере, не попадает в CSV/JSON бэкап откликов.
-        Запрос идёт с устройства на указанный URL. Без ключа коуч всё равно работает локально.
+        Свой ключ OpenAI-совместимого API. Хранится только здесь, не попадает в CSV/JSON бэкап.
+        При «Углубить с ИИ» на указанный URL уходит снимок: имя, стек, до 30 откликов и кусок JD.
+        Без ключа коуч работает локально и никуда не шлёт данные.
       </p>
       <div className="grid-2" style={{ marginTop: 12 }}>
         <div className="field" style={{ gridColumn: "1 / -1" }}>

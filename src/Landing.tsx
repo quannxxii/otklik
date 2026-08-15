@@ -41,7 +41,8 @@ export function Landing() {
         <p className="hero-brand">Отклик</p>
         <h1>Точечный поиск. Без спама.</h1>
         <p className="hero-lead">
-          Вставил вакансию — письмо, follow-up и трекер за секунды. Данные только в твоём браузере.
+          Вставил вакансию — письмо, follow-up и трекер за секунды. По умолчанию данные только в браузере.
+          Свой ИИ-ключ — снимок поиска уходит к провайдеру API.
         </p>
         <div className="hero-cta">
           <Link className="btn accent" to="/app/radar">
@@ -104,7 +105,10 @@ export function Landing() {
           </article>
           <article>
             <h3>Приватно по умолчанию</h3>
-            <p>localStorage. Без регистрации. CSV/JSON, когда нужно унести данные.</p>
+            <p>
+              localStorage, без аккаунта. Скачай JSON-бэкап — иначе смена браузера сотрёт воронку.
+              ИИ включаешь сам: тогда данные уезжают на твой API.
+            </p>
           </article>
           <article>
             <h3>Ритм, не хаос</h3>
@@ -117,8 +121,8 @@ export function Landing() {
         <p className="eyebrow mono">цены</p>
         <h2>Бесплатно пользоваться. Pro — письма и ритм.</h2>
         <p className="muted pricing-lead">
-          Трекер и Radar без оплаты. Pro разово: шаблоны, пакет follow-up, план коуча в буфер.
-          Продукт в браузере — не созвоны и не сопровождение.
+          Трекер и Radar без оплаты. Pro разово: шаблоны в Radar и письмах, пакет follow-up, план коуча в буфер.
+          Продукт в браузере — не созвоны. Ключ живёт в этом Chrome; храни бэкап.
         </p>
         <div className="pricing-grid">
           <article>

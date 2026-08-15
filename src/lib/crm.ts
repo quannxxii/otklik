@@ -1,6 +1,6 @@
 import type { Application, LetterTemplate, Profile, Status, TimelineEvent, TimelineType } from "../types";
 import { STATUS_LABEL } from "../types";
-import { addDays, renderLetter, today, uid } from "./storage";
+import { addDays, nowIso, renderLetter, today, uid } from "./storage";
 import type { MatchResult } from "./match";
 import type { ParsedVacancy } from "./parse";
 
@@ -24,7 +24,7 @@ export function ensureTimeline(app: Application): Application {
 
 export function pushEvent(app: Application, type: TimelineType, text: string): Application {
   const timeline = [...(app.timeline || []), event(type, text)];
-  return { ...app, timeline, updatedAt: today() };
+  return { ...app, timeline, updatedAt: nowIso() };
 }
 
 export function withStatusChange(app: Application, status: Status): Application {
@@ -76,7 +76,7 @@ export function buildFromRadar(input: {
         followUp: "",
         note: "",
         letterTpl: match.suggestedTpl,
-        updatedAt: now,
+        updatedAt: nowIso(),
         timeline: [],
       };
 
@@ -89,9 +89,16 @@ export function buildFromRadar(input: {
     url: parsed.url || match.urls[0] || base.url,
     date: existing?.date || now,
     followUp: status === "sent" ? addDays(now, followDays) : existing?.followUp || "",
-    note: match.matched.length ? `match ${match.score}% · ${match.matched.join(", ")}` : base.note,
+    note:
+      status === "sent"
+        ? match.matched.length
+          ? `match ${match.score}% · ${match.matched.join(", ")}`
+          : base.note
+        : match.matched.length
+          ? `письмо готово · match ${match.score}% · ${match.matched.join(", ")} — отправь на площадке сам`
+          : "письмо скопировано — отправь на площадке сам",
     letterTpl: match.suggestedTpl,
-    updatedAt: now,
+    updatedAt: nowIso(),
     fitScore: match.score,
     salary: parsed.salary || base.salary,
     city: parsed.city || base.city,
@@ -101,7 +108,9 @@ export function buildFromRadar(input: {
       ...(base.timeline || []),
       event(
         status === "sent" ? "sent" : "created",
-        status === "sent" ? "Пакетный отклик: письмо скопировано" : "Черновик из Radar",
+        status === "sent"
+          ? "Отмечено как отправлено"
+          : "Пакет: письмо в буфер, статус черновик — подтверди отправку на площадке",
       ),
     ],
   };
@@ -120,7 +129,7 @@ export function weekItems(apps: Application[], from = today()) {
   for (let i = 0; i < 7; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
-    days.push(d.toISOString().slice(0, 10));
+    days.push(today(d));
   }
   const set = new Set(days);
   const out: WeekItem[] = [];

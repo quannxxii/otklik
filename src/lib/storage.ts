@@ -1,6 +1,7 @@
-import type { Application, LetterTemplate, Profile, TimelineType } from "../types";
-import { DEFAULT_PROFILE, DEFAULT_TEMPLATES } from "../types";
+import type { Application, LetterTemplate, Profile, Status, TimelineType } from "../types";
+import { DEFAULT_PROFILE, DEFAULT_TEMPLATES, STATUS_ORDER } from "../types";
 import { notifyWebChanged } from "./ext-sync";
+import { stripProTemplates } from "./pro";
 
 const APPS_KEY = "otklik-apps-v1";
 const PROFILE_KEY = "otklik-profile-v1";
@@ -12,14 +13,22 @@ export function uid() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
-export function today() {
-  return new Date().toISOString().slice(0, 10);
+/** Local calendar date (avoids UTC midnight shift for MSK). */
+export function today(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+export function nowIso() {
+  return new Date().toISOString();
 }
 
 export function addDays(iso: string, n: number) {
   const d = new Date(`${iso}T12:00:00`);
   d.setDate(d.getDate() + n);
-  return d.toISOString().slice(0, 10);
+  return today(d);
 }
 
 export function daysBetween(a: string, b: string) {
@@ -39,13 +48,54 @@ function read<T>(key: string, fallback: T): T {
 }
 
 function write<T>(key: string, value: T) {
-  localStorage.setItem(key, JSON.stringify(value));
-  localStorage.setItem(SYNC_KEY, String(Date.now()));
-  notifyWebChanged();
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    localStorage.setItem(SYNC_KEY, String(Date.now()));
+    notifyWebChanged();
+  } catch (e) {
+    const quota =
+      e instanceof DOMException &&
+      (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED");
+    if (quota) {
+      console.error("otklik: localStorage quota exceeded");
+      throw new Error("Память браузера переполнена. Скачай бэкап и удали старые отклики с длинным JD.");
+    }
+    throw e;
+  }
+}
+
+const STATUS_SET = new Set<string>(STATUS_ORDER);
+
+export function isApplication(x: unknown): x is Application {
+  if (!x || typeof x !== "object") return false;
+  const a = x as Record<string, unknown>;
+  return (
+    typeof a.id === "string" &&
+    typeof a.company === "string" &&
+    a.company.trim().length > 0 &&
+    typeof a.role === "string" &&
+    typeof a.status === "string" &&
+    STATUS_SET.has(a.status as Status)
+  );
+}
+
+export function sanitizeApps(raw: unknown): Application[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.filter(isApplication).map((a) => ({
+    ...a,
+    platform: String(a.platform || "Другое"),
+    url: String(a.url || ""),
+    date: String(a.date || today()),
+    followUp: String(a.followUp || ""),
+    note: String(a.note || ""),
+    letterTpl: String(a.letterTpl || "fullstack"),
+    updatedAt: String(a.updatedAt || a.date || today()),
+    timeline: Array.isArray(a.timeline) ? a.timeline : undefined,
+  }));
 }
 
 export function loadApps(): Application[] {
-  return read<Application[]>(APPS_KEY, []).map((a) => ({
+  return sanitizeApps(read<unknown>(APPS_KEY, [])).map((a) => ({
     ...a,
     timeline: a.timeline?.length
       ? a.timeline
@@ -80,11 +130,12 @@ export function saveProfile(profile: Profile) {
 
 export function loadTemplates(): LetterTemplate[] {
   const saved = read<LetterTemplate[] | null>(TPL_KEY, null);
-  return saved?.length ? saved : DEFAULT_TEMPLATES;
+  const list = saved?.length ? saved : DEFAULT_TEMPLATES;
+  return stripProTemplates(list);
 }
 
 export function saveTemplates(templates: LetterTemplate[]) {
-  write(TPL_KEY, templates);
+  write(TPL_KEY, stripProTemplates(templates));
 }
 
 export function loadPlatformsDone(): Record<string, boolean> {
@@ -152,6 +203,19 @@ export function downloadText(text: string, filename: string, type: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(a.href);
+}
+
+export type BackupPayload = {
+  profile?: Partial<Profile>;
+  templates?: LetterTemplate[];
+  apps?: Application[];
+  version?: number;
+};
+
+export function parseBackup(raw: string): BackupPayload {
+  const data = JSON.parse(raw) as BackupPayload;
+  if (!data || typeof data !== "object") throw new Error("Не похоже на бэкап Отклик");
+  return data;
 }
 
 export function appsToCsv(apps: Application[]) {

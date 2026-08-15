@@ -1,7 +1,11 @@
 import type { LetterTemplate } from "../types";
 
 const PRO_KEY = "otklik-pro-v1";
-const SECRET = "otklik-pro-signal-2026";
+/** Obfuscated pepper — still client-side; real protection is key re-check on every load. */
+const PEPPER_PARTS = ["otklik", "pro", "signal", "2026"] as const;
+function pepper() {
+  return PEPPER_PARTS.join("-");
+}
 
 export type ProState = {
   active: boolean;
@@ -15,7 +19,7 @@ export const TG_URL = `https://t.me/${TG_HANDLE}`;
 export const PRO_PRICE = "990 ₽";
 
 export const PRO_PERKS = [
-  { title: "Шаблоны под ситуацию", text: "Senior, cold HR, после тестового, Vue, Flutter — не одно письмо на всех." },
+  { title: "Шаблоны под ситуацию", text: "Senior, cold HR, после тестового, Vue, Flutter — в Radar и письмах." },
   { title: "Пакет follow-up", text: "Все письма тем, кто молчит, сразу в буфер. Не по одному." },
   { title: "План коуча в текст", text: "Разбор воронки + ритм на неделю копируются одним кликом." },
 ];
@@ -104,25 +108,6 @@ export function telegramPayLink() {
   return `${TG_URL}?text=${text}`;
 }
 
-export function loadPro(): ProState {
-  try {
-    const raw = localStorage.getItem(PRO_KEY);
-    if (!raw) return { active: false };
-    const saved = JSON.parse(raw) as ProState;
-    return { active: Boolean(saved.active), key: saved.key, activatedAt: saved.activatedAt };
-  } catch {
-    return { active: false };
-  }
-}
-
-export function savePro(state: ProState) {
-  localStorage.setItem(PRO_KEY, JSON.stringify(state));
-}
-
-export function clearPro() {
-  localStorage.removeItem(PRO_KEY);
-}
-
 function normalizeKey(raw: string) {
   return raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
 }
@@ -132,18 +117,85 @@ async function digestHex(input: string) {
   return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
+/** Valid when SHA-256(pepper + compactKey) starts with 000 (~12 bit). */
 export async function isValidProKey(raw: string) {
   const n = normalizeKey(raw);
   if (!/^OTK[A-F0-9]{8}$/.test(n)) return false;
-  const h = await digestHex(SECRET + n);
-  return h.startsWith("00");
+  const h = await digestHex(pepper() + n);
+  return h.startsWith("000");
+}
+
+/** Only trust a stored key after crypto check — never the `active` flag alone. */
+export async function resolvePro(): Promise<ProState> {
+  try {
+    const raw = localStorage.getItem(PRO_KEY);
+    if (!raw) return { active: false };
+    const saved = JSON.parse(raw) as ProState;
+    if (!saved.key || !(await isValidProKey(saved.key))) {
+      clearPro();
+      return { active: false };
+    }
+    const state: ProState = {
+      active: true,
+      key: normalizeKey(saved.key),
+      activatedAt: saved.activatedAt,
+    };
+    savePro(state);
+    return state;
+  } catch {
+    clearPro();
+    return { active: false };
+  }
+}
+
+export function loadPro(): ProState {
+  try {
+    const raw = localStorage.getItem(PRO_KEY);
+    if (!raw) return { active: false };
+    const saved = JSON.parse(raw) as ProState;
+    // Optimistic UI only if key present; hydrate validates async.
+    if (!saved.key) return { active: false };
+    return { active: false, key: saved.key, activatedAt: saved.activatedAt };
+  } catch {
+    return { active: false };
+  }
+}
+
+export function savePro(state: ProState) {
+  if (!state.active || !state.key) {
+    clearPro();
+    return;
+  }
+  localStorage.setItem(
+    PRO_KEY,
+    JSON.stringify({
+      active: true,
+      key: normalizeKey(state.key),
+      activatedAt: state.activatedAt,
+    }),
+  );
+}
+
+export function clearPro() {
+  localStorage.removeItem(PRO_KEY);
+}
+
+/**
+ * Seller mint: ?mint=1 + passphrase (not in the URL).
+ * Still client-side — no public backend — but stops casual ?mint=1 abuse.
+ */
+export async function canMint(sellerPass: string) {
+  const got = await digestHex(`${pepper()}:seller:${sellerPass.trim()}`);
+  // sha256("otklik-pro-signal-2026:seller:n_a_o_a_mint") — change passphrase by regenerating this.
+  const expected = await digestHex(`${pepper()}:seller:n_a_o_a_mint`);
+  return got === expected;
 }
 
 export async function mintProKey(nonce = crypto.randomUUID()) {
-  for (let i = 0; i < 200000; i++) {
-    const body = (await digestHex(`${SECRET}:${nonce}:${i}`)).slice(0, 8).toUpperCase();
+  for (let i = 0; i < 500000; i++) {
+    const body = (await digestHex(`${pepper()}:${nonce}:${i}`)).slice(0, 8).toUpperCase();
     const compact = `OTK${body}`;
-    if ((await digestHex(SECRET + compact)).startsWith("00")) {
+    if ((await digestHex(pepper() + compact)).startsWith("000")) {
       return `OTK-${body.slice(0, 4)}-${body.slice(4)}`;
     }
   }
@@ -162,11 +214,15 @@ export async function activateProKey(raw: string): Promise<ProState> {
   return state;
 }
 
-export function visibleTemplates(all: LetterTemplate[], isPro: boolean) {
-  if (isPro) {
-    const ids = new Set(all.map((t) => t.id));
-    const extra = PRO_TEMPLATES.filter((t) => !ids.has(t.id));
-    return [...all, ...extra];
-  }
+/** Persist only user templates; Pro packs are injected at runtime. */
+export function stripProTemplates(all: LetterTemplate[]) {
   return all.filter((t) => !t.id.startsWith("pro-"));
+}
+
+export function visibleTemplates(all: LetterTemplate[], isPro: boolean) {
+  const base = stripProTemplates(all);
+  if (!isPro) return base;
+  const ids = new Set(base.map((t) => t.id));
+  const extra = PRO_TEMPLATES.filter((t) => !ids.has(t.id));
+  return [...base, ...extra];
 }

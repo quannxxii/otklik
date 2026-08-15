@@ -109,7 +109,7 @@ function mount() {
       const ok = C.fillLetterBox(ctx.letter);
       if (!ok) show("Поля письма на странице нет — сначала нажми «Откликнуться» у hh, потом «В форму».", true);
     }
-    if (ctx.dup && status === "sent") {
+    if (ctx.dup && status !== "draft") {
       show("Такой отклик уже в трекере. Письмо скопировано — отправь вручную.");
       C.highlightApply();
       return;
@@ -130,12 +130,12 @@ function mount() {
     const extra = doCopy ? " Письмо в буфере." : "";
     show(
       status === "sent"
-        ? `Записано как отправлено.${extra} Жми «Откликнуться» на hh сам.`
-        : `Черновик в трекере.${extra}`,
+        ? `Записано как отправлено.${extra}`
+        : `Черновик в трекере.${extra} На hh жми «Откликнуться» сам.`,
     );
   }
 
-  root.querySelector("#otklik-pack").onclick = () => void save("sent", true, true);
+  root.querySelector("#otklik-pack").onclick = () => void save("draft", true, true);
   root.querySelector("#otklik-copy").onclick = async () => {
     const ctx = await context();
     await copy(ctx.letter);

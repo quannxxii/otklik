@@ -12,7 +12,7 @@ import { CoachReportView } from "../components/CoachReport";
 import "./Radar.css";
 
 export function RadarPage() {
-  const { apps, setApps, profile, templates, showToast } = useStore();
+  const { apps, setApps, profile, templates, showToast, isPro } = useStore();
   const navigate = useNavigate();
   const [jd, setJd] = useState("");
   const [coach, setCoach] = useState<CoachReport | null>(null);
@@ -20,8 +20,11 @@ export function RadarPage() {
   const [coachBusy, setCoachBusy] = useState(false);
   const parsed = useMemo(() => (jd.trim() ? parseVacancy(jd) : null), [jd]);
   const result = useMemo(
-    () => (jd.trim() ? analyzeVacancy(jd, profile.skills) : null),
-    [jd, profile.skills],
+    () =>
+      jd.trim()
+        ? analyzeVacancy(jd, profile.skills, { isPro, hintStack: parsed?.stack || [] })
+        : null,
+    [jd, profile.skills, isPro, parsed?.stack],
   );
 
   useEffect(() => {
@@ -67,7 +70,7 @@ export function RadarPage() {
   }
 
   async function packageApply() {
-    const app = makeApp();
+    const app = makeApp("draft");
     if (!app) return;
     const letter = letterFor(templates, app.letterTpl, {
       company: app.company,
@@ -78,11 +81,12 @@ export function RadarPage() {
     try {
       await copyText(letter);
     } catch {
-      /* ignore */
+      showToast("Не удалось скопировать — разреши буфер обмена");
+      return;
     }
     setApps((prev) => [...prev, app]);
     if (app.url) window.open(app.url, "_blank", "noopener,noreferrer");
-    showToast("Пакет: письмо скопировано, отклик записан, follow-up через " + profile.followDays + " дн.");
+    showToast("Письмо в буфере, черновик в трекере. На площадке жми «Откликнуться» сам.");
     navigate("/app");
   }
 
@@ -154,7 +158,8 @@ export function RadarPage() {
           <p className="mono eyebrow">vacancy radar</p>
           <h2>Вставь вакансию — откликнись за один клик</h2>
           <p className="muted">
-            Парсим роль, компанию, вилку, город, стек. «Пакет» копирует письмо, открывает вакансию и ставит follow-up.
+            Парсим роль, компанию, вилку, город, стек. «Пакет» копирует письмо и пишет черновик —
+            на площадке «Откликнуться» жмёшь сам. Match считается по стеку вакансии, не по ширине твоего резюме.
           </p>
         </div>
         <button type="button" className="btn ghost" onClick={fillDemo}>
@@ -202,6 +207,16 @@ export function RadarPage() {
                       : <span className="muted">пусто</span>}
                   </div>
                 </div>
+                {result.missing.length > 0 && (
+                  <div>
+                    <h4>Нет у тебя из JD</h4>
+                    <div className="tag-row">
+                      {result.missing.map((m) => (
+                        <span key={m} className="tag">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {parsed.stack.length > 0 && (
                   <div>
                     <h4>Стек из вакансии</h4>
