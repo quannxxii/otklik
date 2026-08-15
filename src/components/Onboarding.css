@@ -1,0 +1,41 @@
+.onb-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(7, 11, 20, 0.72);
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+
+.onb {
+  width: min(560px, 100%);
+  animation: onbIn 0.25s ease;
+}
+
+@keyframes onbIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.onb-step {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.onb h2 {
+  font-size: 26px;
+  letter-spacing: -0.03em;
+  margin-bottom: 14px;
+}
+
+.checkline {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  grid-column: 1 / -1;
+  font-size: 14px;
+}
