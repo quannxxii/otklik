@@ -339,3 +339,22 @@ tr.follow td { box-shadow: inset 3px 0 0 var(--accent); }
   align-items: center;
   font-size: 14px;
 }
+
+@media (max-width: 900px) {
+  .app-header-inner {
+    flex-wrap: nowrap;
+    gap: 10px;
+  }
+  .app-header .logo { flex-shrink: 0; }
+  .app-nav {
+    flex: 1;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .app-nav::-webkit-scrollbar { display: none; }
+  .app-nav a { white-space: nowrap; padding: 8px 9px; }
+  .cmd-btn { flex-shrink: 0; }
+}

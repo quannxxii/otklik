@@ -73,8 +73,10 @@ export function Landing() {
           />
           <div className="demo-score">
             <div className="score-ring" style={{ ["--p" as string]: `${result.score}%` }}>
-              <strong>{result.score}</strong>
-              <span>match</span>
+              <span className="score-ring-label">
+                <strong>{result.score}</strong>
+                <span>match</span>
+              </span>
             </div>
             <div className="demo-score-copy">
               <p>{result.verdict}</p>

@@ -46,30 +46,7 @@
   to { transform: none; opacity: 1; }
 }
 
-.score-ring {
-  width: 132px;
-  height: 132px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at center, #fff 0 54%, transparent 55%),
-    conic-gradient(var(--accent) var(--p), #e4e8f0 0);
-  margin-bottom: 4px;
-}
-
-.score-ring strong {
-  font-family: var(--display);
-  font-size: 34px;
-  letter-spacing: -0.05em;
-  line-height: 1;
-}
-
-.score-ring span {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
-}
+.radar-score .score-ring { margin-bottom: 4px; }
 
 .verdict { font-size: 15px; }
 

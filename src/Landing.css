@@ -128,11 +128,12 @@
 .hero-brand {
   font-family: var(--display);
   font-weight: 800;
-  font-size: clamp(72px, 16vw, 140px);
+  font-size: clamp(52px, 18vw, 140px);
   line-height: 0.86;
   letter-spacing: -0.07em;
   margin-bottom: 18px;
   color: var(--ink);
+  overflow-wrap: anywhere;
   animation: rise 0.9s var(--ease-out) 0.05s both;
 }
 
@@ -221,34 +222,13 @@
   padding: 4px 0;
 }
 
-.score-ring {
-  width: 132px;
-  height: 132px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background:
-    radial-gradient(circle at center, #fff 0 54%, transparent 55%),
-    conic-gradient(var(--accent) var(--p), #d9e0ef 0);
+.demo .score-ring {
   animation: ringPop 0.55s var(--ease-out);
 }
 
 @keyframes ringPop {
   from { transform: scale(0.92); opacity: 0.4; }
   to { transform: none; opacity: 1; }
-}
-
-.score-ring strong {
-  font-family: var(--display);
-  font-size: 36px;
-  letter-spacing: -0.05em;
-  line-height: 1;
-}
-
-.score-ring span {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--muted);
 }
 
 .demo-score-copy {
@@ -428,17 +408,27 @@
 
 @media (max-width: 960px) {
   .demo-stage, .why-grid, .pricing-grid { grid-template-columns: 1fr; }
+  .demo-stage textarea { min-height: 200px; }
+  .demo-score {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 16px;
+  }
   .why-grid article,
   .pricing-grid article {
     border-right: 0;
     border-bottom: 1px solid var(--line);
     padding: 18px 0;
   }
+  .pricing-grid article.featured {
+    padding-left: 22px;
+  }
   .landing-nav-right a:not(.btn) { display: none; }
   .radar-field {
-    opacity: 0.45;
-    right: -20%;
-    top: 0;
+    opacity: 0.35;
+    right: -28%;
+    top: -8%;
+    width: min(420px, 92vw);
   }
-  .hero { min-height: auto; padding: 36px 0 48px; }
+  .hero { min-height: auto; padding: 28px 0 40px; }
 }

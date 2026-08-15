@@ -187,4 +187,5 @@
     border-bottom: 1px solid var(--line);
     padding: 18px 0;
   }
+  .pro-compare .featured { padding-left: 22px; }
 }
