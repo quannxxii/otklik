@@ -1068,6 +1068,25 @@ function SettingsPage() {
     </div>
 
     <div className="card" style={{ marginTop: 12 }}>
+      <h2>Расширение Chrome / Edge</h2>
+      <p className="tiny">
+        На странице вакансии hh.ru и Хабр Карьеры — кнопка «О»: match, письмо в буфер, запись в трекер.
+        «Откликнуться» на площадке жмёшь сам. Авторассылки нет.
+      </p>
+      <ol className="tiny" style={{ margin: "10px 0 0 18px", display: "grid", gap: 6 }}>
+        <li>chrome://extensions → режим разработчика</li>
+        <li>Загрузить распакованное → папка <code>extension</code> в репозитории Отклик</li>
+        <li>Заполни профиль здесь, потом открой вакансию</li>
+        <li>Пакет → вставь письмо в форму hh → отправь вручную</li>
+      </ol>
+      <div className="actions">
+        <a className="btn ghost" href="https://github.com/quannxxii/otklik/tree/main/extension" target="_blank" rel="noreferrer">
+          Папка на GitHub
+        </a>
+      </div>
+    </div>
+
+    <div className="card" style={{ marginTop: 12 }}>
       <h2>ИИ-коуч</h2>
       <p className="tiny">
         Свой ключ OpenAI-совместимого API. Живёт только в этом браузере, не попадает в CSV/JSON бэкап откликов.

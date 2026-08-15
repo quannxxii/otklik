@@ -1,10 +1,12 @@
 import type { Application, LetterTemplate, Profile, TimelineType } from "../types";
 import { DEFAULT_PROFILE, DEFAULT_TEMPLATES } from "../types";
+import { notifyWebChanged } from "./ext-sync";
 
 const APPS_KEY = "otklik-apps-v1";
 const PROFILE_KEY = "otklik-profile-v1";
 const TPL_KEY = "otklik-templates-v1";
 const PLATFORMS_DONE_KEY = "otklik-platforms-done-v1";
+const SYNC_KEY = "otklik-sync-at";
 
 export function uid() {
   return crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -38,6 +40,8 @@ function read<T>(key: string, fallback: T): T {
 
 function write<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
+  localStorage.setItem(SYNC_KEY, String(Date.now()));
+  notifyWebChanged();
 }
 
 export function loadApps(): Application[] {

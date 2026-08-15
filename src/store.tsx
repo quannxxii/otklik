@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Application, LetterTemplate, Profile } from "./types";
 import {
   loadApps,
@@ -10,6 +10,7 @@ import {
   saveProfile,
   saveTemplates,
 } from "./lib/storage";
+import { subscribeExtensionSync } from "./lib/ext-sync";
 
 type Store = {
   apps: Application[];
@@ -62,6 +63,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 1800);
+  }, []);
+
+  useEffect(() => {
+    return subscribeExtensionSync((state) => {
+      if (Array.isArray(state.apps)) setAppsState(state.apps as Application[]);
+      if (state.profile && typeof state.profile === "object") {
+        setProfileState({ ...loadProfile(), ...(state.profile as Profile) });
+      }
+      if (Array.isArray(state.templates) && state.templates.length) {
+        setTemplatesState(state.templates as LetterTemplate[]);
+      }
+    });
   }, []);
 
   const value = useMemo(

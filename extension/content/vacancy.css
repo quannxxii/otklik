@@ -1,0 +1,105 @@
+#otklik-root {
+  all: initial;
+  position: fixed;
+  z-index: 2147483000;
+  right: 16px;
+  bottom: 16px;
+  font-family: Outfit, system-ui, sans-serif;
+  color: #0c1222;
+}
+
+#otklik-root * { box-sizing: border-box; }
+
+.otklik-fab {
+  width: 52px;
+  height: 52px;
+  border: 0;
+  background: #2555ff;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(37, 85, 255, 0.35);
+}
+
+.otklik-panel {
+  width: min(360px, calc(100vw - 32px));
+  background: #fff;
+  border: 1px solid #d7dde8;
+  padding: 14px;
+  margin-bottom: 10px;
+  display: none;
+}
+
+.otklik-panel.open { display: block; }
+
+.otklik-panel h3 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  letter-spacing: -0.03em;
+}
+
+.otklik-muted { color: #5a6478; font-size: 12px; margin: 0 0 10px; }
+
+.otklik-score {
+  font-size: 28px;
+  letter-spacing: -0.04em;
+  margin: 0 0 6px;
+}
+
+.otklik-verdict { font-size: 13px; margin: 0 0 10px; }
+
+.otklik-meta {
+  font-family: ui-monospace, "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: #5a6478;
+  display: grid;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.otklik-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px; }
+
+.otklik-tag {
+  border: 1px solid #9fd5b3;
+  background: #edf9f1;
+  padding: 2px 6px;
+  font-size: 11px;
+}
+
+.otklik-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.otklik-btn {
+  border: 1px solid #0c1222;
+  background: #0c1222;
+  color: #fff;
+  padding: 8px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.otklik-btn.ghost {
+  background: #fff;
+  color: #0c1222;
+  border-color: #d7dde8;
+}
+
+.otklik-btn.accent {
+  background: #2555ff;
+  border-color: #2555ff;
+}
+
+.otklik-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.otklik-toast {
+  font-size: 12px;
+  margin-top: 8px;
+  color: #1f7a45;
+}
+
+.otklik-warn { color: #9a6b12; }
+
+.otklik-highlight-apply {
+  outline: 3px solid #2555ff !important;
+  outline-offset: 3px !important;
+}
