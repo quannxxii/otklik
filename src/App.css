@@ -9,7 +9,12 @@
   flex-wrap: wrap;
 }
 
-.form-head h2 { margin: 0; }
+.form-head h2 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: -0.03em;
+}
 
 .pulse-row {
   display: grid;
@@ -36,19 +41,20 @@
 .heatmap i {
   display: block;
   aspect-ratio: 1;
-  background: #e4e8f0;
+  background: #dde3ef;
+  transition: background 0.2s ease;
 }
 
 .heatmap i.h1 { background: #c5d2ff; }
 .heatmap i.h2 { background: #8ea6ff; }
 .heatmap i.h3 { background: #5b8cff; }
-.heatmap i.h4 { background: #2555ff; }
+.heatmap i.h4 { background: var(--accent); }
 
 .view-toggle { display: flex; gap: 6px; }
 
 .cmd-btn {
   padding: 6px 10px !important;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono);
   font-size: 12px;
 }
 
@@ -61,11 +67,12 @@
 }
 
 .kanban-col {
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
   border: 1px solid var(--line);
   min-height: 280px;
   display: flex;
   flex-direction: column;
+  backdrop-filter: blur(6px);
 }
 
 .kanban-col header {
@@ -74,6 +81,9 @@
   padding: 10px 12px;
   border-bottom: 1px solid var(--line);
   font-size: 13px;
+  font-family: var(--display);
+  font-weight: 650;
+  letter-spacing: -0.02em;
 }
 
 .kanban-list {
@@ -87,9 +97,15 @@
 .kanban-card {
   border: 1px solid var(--line);
   padding: 8px;
-  background: #fbfcff;
+  background: #fff;
   display: grid;
   gap: 8px;
+  transition: border-color 0.2s ease, transform 0.2s var(--ease-out);
+}
+
+.kanban-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
 }
 
 .kanban-title {
@@ -103,7 +119,7 @@
 }
 
 .kanban-title span { color: var(--muted); font-size: 12px; }
-.kanban-title em { color: var(--accent); font-style: normal; font-size: 11px; }
+.kanban-title em { color: var(--accent); font-style: normal; font-size: 11px; font-family: var(--mono); }
 
 .kanban-card select {
   width: 100%;
@@ -117,11 +133,10 @@
   .kanban { grid-template-columns: repeat(6, minmax(180px, 1fr)); }
 }
 
-
 .app-header {
   border-bottom: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: blur(8px);
+  background: rgba(247, 248, 252, 0.82);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -132,22 +147,25 @@
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
+  padding: 12px 0;
   flex-wrap: wrap;
 }
 
 .app-nav {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px;
+  gap: 2px;
 }
 
 .app-nav a {
   text-decoration: none;
-  padding: 8px 12px;
+  padding: 8px 11px;
   color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
+  transition: color 0.15s ease;
 }
+
+.app-nav a:hover { color: var(--ink); }
 
 .app-nav a.active {
   color: var(--ink);
@@ -155,7 +173,7 @@
   box-shadow: inset 0 -2px 0 var(--accent);
 }
 
-.app-main { padding: 18px 0 48px; }
+.app-main { padding: 20px 0 56px; }
 
 .banner {
   background: var(--accent-soft);
@@ -180,7 +198,7 @@
   flex: 1;
   min-width: 140px;
   height: 8px;
-  background: #e4e8f0;
+  background: #dde3ef;
 }
 
 .goal-bar i {
@@ -188,6 +206,7 @@
   height: 100%;
   background: var(--accent);
   max-width: 100%;
+  transition: width 0.4s var(--ease-out);
 }
 
 .stats {
@@ -198,15 +217,25 @@
 }
 
 .stat {
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
   border: 1px solid var(--line);
   padding: 10px 12px;
   text-align: left;
+  transition: border-color 0.15s ease, transform 0.2s var(--ease-out);
 }
 
-.stat.on, .stat:hover { border-color: var(--ink); }
+.stat.on, .stat:hover {
+  border-color: var(--ink);
+  transform: translateY(-1px);
+}
 
-.stat b { display: block; font-size: 20px; }
+.stat b {
+  display: block;
+  font-family: var(--display);
+  font-size: 22px;
+  letter-spacing: -0.04em;
+}
+
 .stat span { color: var(--muted); font-size: 11px; }
 
 .form, .filters { margin-bottom: 12px; }
@@ -219,9 +248,7 @@
   align-items: center;
 }
 
-.paste-box textarea {
-  min-height: 88px;
-}
+.paste-box textarea { min-height: 88px; }
 
 .agenda {
   display: flex;
@@ -240,7 +267,10 @@
   display: inline-flex;
   gap: 8px;
   align-items: center;
+  transition: border-color 0.15s ease;
 }
+
+.agenda-item:hover { border-color: var(--ink); }
 
 .table-wrap { overflow-x: auto; }
 
@@ -252,16 +282,16 @@ table {
 
 th, td {
   border-bottom: 1px solid var(--line);
-  padding: 10px;
+  padding: 11px 10px;
   text-align: left;
   vertical-align: top;
 }
 
 th {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono);
   font-size: 11px;
   font-weight: 500;
-  background: #f3f5fa;
+  background: rgba(228, 232, 242, 0.7);
 }
 
 tr.follow td { box-shadow: inset 3px 0 0 var(--accent); }
@@ -305,4 +335,3 @@ tr.follow td { box-shadow: inset 3px 0 0 var(--accent); }
   align-items: center;
   font-size: 14px;
 }
-

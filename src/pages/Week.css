@@ -8,8 +8,10 @@
 }
 
 .week-head h2 {
+  font-family: var(--display);
   font-size: 28px;
   letter-spacing: -0.03em;
+  font-weight: 700;
 }
 
 .week-grid {

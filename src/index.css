@@ -1,19 +1,32 @@
 :root {
-  --ink: #0c1222;
-  --muted: #5a6478;
-  --line: #d7dde8;
-  --paper: #eef1f6;
+  --ink: #0a0f1c;
+  --ink-soft: #1c2438;
+  --muted: #5c6578;
+  --line: #d4dae6;
+  --line-strong: #b8c0d0;
+  --paper: #eef1f7;
+  --paper-deep: #e4e8f2;
   --card: #ffffff;
-  --accent: #2555ff;
+  --accent: #1a4dff;
+  --accent-ink: #1036c9;
   --accent-soft: #e8eeff;
-  --ok: #1f7a45;
+  --signal: #0d9f86;
+  --ok: #0f7a4f;
   --warn: #9a6b12;
   --bad: #b42318;
   --radius: 0;
-  font-family: Outfit, system-ui, sans-serif;
-  line-height: 1.45;
+  --display: "Syne", "Arial Black", sans-serif;
+  --sans: "Sora", "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: var(--sans);
+  line-height: 1.5;
   color: var(--ink);
-  background: var(--paper);
+  background:
+    radial-gradient(900px 420px at 12% -8%, rgba(26, 77, 255, 0.08), transparent 55%),
+    radial-gradient(700px 380px at 92% 8%, rgba(13, 159, 134, 0.06), transparent 50%),
+    linear-gradient(180deg, #f4f6fb 0%, var(--paper) 40%, #e9edf5 100%);
+  background-attachment: fixed;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -32,8 +45,15 @@ button, input, select, textarea {
 
 button { cursor: pointer; }
 
-.mono {
-  font-family: "IBM Plex Mono", ui-monospace, monospace;
+.mono { font-family: var(--mono); }
+
+.logo {
+  font-family: var(--display);
+  font-weight: 800;
+  font-size: 22px;
+  letter-spacing: -0.05em;
+  text-decoration: none;
+  color: var(--ink);
 }
 
 .container {
@@ -49,17 +69,20 @@ button { cursor: pointer; }
   border: 1px solid var(--ink);
   background: var(--ink);
   color: #fff;
-  padding: 10px 16px;
+  padding: 11px 18px;
   text-decoration: none;
   font-weight: 500;
+  font-size: 14px;
+  letter-spacing: -0.01em;
+  transition: transform 0.25s var(--ease-out), background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-.btn:hover { filter: brightness(1.08); }
+.btn:hover { transform: translateY(-1px); }
 
 .btn.ghost {
   background: transparent;
   color: var(--ink);
-  border-color: var(--line);
+  border-color: var(--line-strong);
 }
 
 .btn.ghost:hover { border-color: var(--ink); }
@@ -69,20 +92,23 @@ button { cursor: pointer; }
   border-color: var(--accent);
 }
 
+.btn.accent:hover { background: var(--accent-ink); border-color: var(--accent-ink); }
+
 .btn.danger {
   color: var(--bad);
   border-color: #f0c4c0;
   background: transparent;
 }
 
-.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
 
 .field label {
   display: block;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono);
   font-size: 11px;
   color: var(--muted);
-  margin-bottom: 4px;
+  margin-bottom: 5px;
+  letter-spacing: 0.02em;
 }
 
 .field input,
@@ -91,14 +117,16 @@ button { cursor: pointer; }
   width: 100%;
   border: 1px solid var(--line);
   background: #fff;
-  padding: 9px 11px;
+  padding: 10px 12px;
+  transition: border-color 0.15s ease, outline-color 0.15s ease;
 }
 
 .field input:focus,
 .field select:focus,
 .field textarea:focus {
-  outline: 2px solid var(--accent);
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
   outline-offset: 1px;
+  border-color: var(--accent);
 }
 
 .field textarea { min-height: 160px; resize: vertical; }
@@ -116,14 +144,17 @@ button { cursor: pointer; }
 }
 
 .card {
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
   border: 1px solid var(--line);
   padding: 16px;
+  backdrop-filter: blur(8px);
 }
 
 .card h2 {
-  font-size: 16px;
-  font-weight: 600;
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   margin-bottom: 10px;
 }
 
@@ -136,15 +167,21 @@ button { cursor: pointer; }
   bottom: 16px;
   background: var(--ink);
   color: #fff;
-  padding: 10px 14px;
+  padding: 11px 14px;
   font-size: 13px;
   z-index: 100;
   max-width: 280px;
+  animation: toastIn 0.35s var(--ease-out);
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
 
 .pill {
   display: inline-block;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono);
   font-size: 11px;
   padding: 2px 7px;
   border: 1px solid var(--line);

@@ -73,7 +73,7 @@
   border: 1px solid var(--line);
   padding: 3px 8px;
   font-size: 12px;
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--mono);
 }
 
 @media (max-width: 720px) {

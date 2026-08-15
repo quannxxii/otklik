@@ -15,9 +15,11 @@
 }
 
 .coach-head h2 {
+  font-family: var(--display);
   font-size: clamp(24px, 4vw, 34px);
   letter-spacing: -0.04em;
   margin: 6px 0 8px;
+  font-weight: 700;
 }
 
 .coach-body {

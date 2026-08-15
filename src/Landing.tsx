@@ -13,14 +13,23 @@ export function Landing() {
 
   return (
     <div className="landing">
-      <div className="landing-bg" aria-hidden />
+      <div className="landing-atmosphere" aria-hidden>
+        <div className="radar-field">
+          <i className="ring r1" />
+          <i className="ring r2" />
+          <i className="ring r3" />
+          <i className="beam" />
+          <i className="dot" />
+        </div>
+      </div>
+
       <header className="landing-nav container">
         <Link to="/" className="logo">
           Отклик
         </Link>
         <div className="landing-nav-right">
-          <a href="#demo">live demo</a>
-          <a href="#why">зачем</a>
+          <a href="#demo">Radar</a>
+          <a href="#why">почему</a>
           <Link className="btn accent" to="/app">
             Открыть
           </Link>
@@ -28,97 +37,82 @@ export function Landing() {
       </header>
 
       <section className="hero container">
-        <p className="eyebrow mono">job search OS · без спама</p>
-        <h1>
-          Откликай
-          <br />
-          <span>умно.</span>
-        </h1>
+        <p className="hero-brand">Отклик</p>
+        <h1>Точечный поиск. Без спама.</h1>
         <p className="hero-lead">
-          Не рассылка «всем IT-компаниям». Система: вставил вакансию — пакетный отклик,
-          коуч, CRM собесов. Расширение на hh: письмо и трекер, отправку подтверждаешь ты.
+          Вставил вакансию — письмо, follow-up и трекер за секунды. Данные только в твоём браузере.
         </p>
         <div className="hero-cta">
           <Link className="btn accent" to="/app/radar">
             Запустить Radar
           </Link>
           <Link className="btn ghost" to="/app">
-            Сразу в трекер
+            В трекер
           </Link>
-        </div>
-        <div className="hero-stats mono">
-          <div>
-            <b>0</b>
-            <span>серверов с твоим резюме</span>
-          </div>
-          <div>
-            <b>⌘K</b>
-            <span>командная палитра</span>
-          </div>
-          <div>
-            <b>28д</b>
-            <span>heatmap активности</span>
-          </div>
         </div>
       </section>
 
       <section id="demo" className="demo container">
         <div className="demo-copy">
           <p className="eyebrow mono">vacancy radar</p>
-          <h2>Вставил текст вакансии — сразу видно, бить или нет</h2>
+          <h2>Вставил текст — сразу видно, бить или нет</h2>
           <p className="muted">
-            Локальный match score по стеку. Подсказывает шаблон письма и угадывает роль/компанию.
-            Это и есть «вау»: меньше тупых откликов, больше попаданий.
+            Match по стеку, пакетный отклик, коуч и расширение для hh. Не рассылка «всем IT» — система.
           </p>
-          <ul className="bullets">
-            <li>Fit % и парсер вилки / города / стека</li>
-            <li>Пакет: письмо, вкладка, follow-up</li>
-            <li>Расширение: hh / Хабр → письмо + трекер, без автоотправки</li>
-            <li>Коуч: локальный разбор сразу, ИИ — свой ключ</li>
-            <li>CRM: собесы, тестовые, причины отказа</li>
-            <li>Неделя + канбан + digest</li>
-          </ul>
         </div>
-        <div className="demo-panel">
-          <textarea value={jd} onChange={(e) => setJd(e.target.value)} aria-label="демо вакансия" />
+        <div className="demo-stage">
+          <label className="mono tiny" htmlFor="demo-jd">
+            текст вакансии
+          </label>
+          <textarea
+            id="demo-jd"
+            value={jd}
+            onChange={(e) => setJd(e.target.value)}
+            aria-label="демо вакансия"
+          />
           <div className="demo-score">
             <div className="score-ring" style={{ ["--p" as string]: `${result.score}%` }}>
               <strong>{result.score}</strong>
               <span>match</span>
             </div>
-            <p>{result.verdict}</p>
-            <div className="tag-row">
-              {result.matched.slice(0, 6).map((m) => (
-                <span key={m} className="tag ok">
-                  {m}
-                </span>
-              ))}
+            <div className="demo-score-copy">
+              <p>{result.verdict}</p>
+              <div className="tag-row">
+                {result.matched.slice(0, 6).map((m) => (
+                  <span key={m} className="tag ok">
+                    {m}
+                  </span>
+                ))}
+              </div>
+              <Link className="btn accent" to="/app/radar">
+                Полный Radar
+              </Link>
             </div>
-            <Link className="btn accent" to="/app/radar">
-              Открыть полный Radar
-            </Link>
           </div>
         </div>
       </section>
 
-      <section id="why" className="strip container">
-        <article>
-          <h3>Не спам-пушка</h3>
-          <p>Массовая рассылка убивает аккаунты и репутацию. Мы ускоряем точечные отклики.</p>
-        </article>
-        <article>
-          <h3>Приватно по умолчанию</h3>
-          <p>localStorage. Без регистрации. Экспорт CSV/JSON, если захочешь унести данные.</p>
-        </article>
-        <article>
-          <h3>Ритм, не хаос</h3>
-          <p>Цель на день, стрик, heatmap, коуч по воронке, follow-up через N дней.</p>
-        </article>
+      <section id="why" className="why container">
+        <p className="eyebrow mono">принципы</p>
+        <div className="why-grid">
+          <article>
+            <h3>Не спам-пушка</h3>
+            <p>Ускоряем точечные отклики. Массовая рассылка убивает аккаунты.</p>
+          </article>
+          <article>
+            <h3>Приватно по умолчанию</h3>
+            <p>localStorage. Без регистрации. CSV/JSON, когда нужно унести данные.</p>
+          </article>
+          <article>
+            <h3>Ритм, не хаос</h3>
+            <p>Цель на день, стрик, коуч, follow-up и неделя собесов.</p>
+          </article>
+        </div>
       </section>
 
       <section className="cta container">
         <h2>Хватит стрелять по воробьям.</h2>
-        <p className="muted">Собери систему за 2 минуты. Дальше — только вакансии и Enter.</p>
+        <p className="muted">Собери систему за две минуты. Дальше — только вакансии.</p>
         <Link className="btn accent" to="/app">
           Войти в Отклик
         </Link>
@@ -126,7 +120,7 @@ export function Landing() {
 
       <footer className="landing-foot container">
         <span className="logo">Отклик</span>
-        <span className="muted">Для людей, которые ищут работу как продукт, а не как лотерею.</span>
+        <span className="muted">Поиск работы как продукт, не лотерея.</span>
       </footer>
     </div>
   );

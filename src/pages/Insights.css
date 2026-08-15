@@ -3,9 +3,11 @@
 }
 
 .insights-head h2 {
+  font-family: var(--display);
   font-size: 28px;
   letter-spacing: -0.03em;
   margin-bottom: 6px;
+  font-weight: 700;
 }
 
 .insights-grid {
