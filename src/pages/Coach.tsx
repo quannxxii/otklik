@@ -1,13 +1,16 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useStore } from "../store";
 import { buildSnapshot, localCoach, type CoachReport } from "../lib/coach";
 import { loadAiSettings, llmCoach } from "../lib/llm";
+import { copyText } from "../lib/storage";
+import { WEEK_RHYTHM } from "../lib/pro";
 import { CoachReportView } from "../components/CoachReport";
 import "./Coach.css";
 
 export function CoachPage() {
-  const { apps, profile, showToast } = useStore();
+  const navigate = useNavigate();
+  const { apps, profile, showToast, isPro } = useStore();
   const snap = useMemo(() => buildSnapshot(apps, profile), [apps, profile]);
   const local = useMemo(() => localCoach(snap), [snap]);
   const [report, setReport] = useState<CoachReport | null>(null);
@@ -35,6 +38,36 @@ export function CoachPage() {
     }
   }
 
+  function copyWeekPlan() {
+    if (!isPro) {
+      showToast("Копия плана — в Pro");
+      navigate("/app/pro");
+      return;
+    }
+    const r = shown;
+    const lines = [
+      `План поиска — ${profile.name || "кандидат"}`,
+      r.headline,
+      "",
+      "Действия:",
+      ...r.actions.map((a, i) => `${i + 1}. ${a.title} — ${a.why}`),
+      "",
+      "Сегодня:",
+      ...(r.today.length ? r.today.map((t) => `• ${t}`) : ["• follow-up пуст — 3–5 точечных откликов"]),
+      "",
+      "Не делать:",
+      r.skip,
+      "",
+      "Письмо:",
+      r.letter,
+      "",
+      r.gaps.length ? `Пробелы: ${r.gaps.join(", ")}` : "",
+      "",
+      WEEK_RHYTHM,
+    ].filter((x) => x !== "");
+    void copyText(lines.join("\n")).then(() => showToast("План скопирован"));
+  }
+
   return (
     <div className="coach-page">
       <div className="coach-head">
@@ -49,9 +82,17 @@ export function CoachPage() {
           <button type="button" className="btn accent" onClick={() => void deepen()} disabled={busy}>
             {busy ? "Думаю…" : "Углубить с ИИ"}
           </button>
+          <button type="button" className="btn ghost" onClick={copyWeekPlan}>
+            {isPro ? "Скопировать план" : "План · Pro"}
+          </button>
           {!ai.apiKey && (
             <Link className="btn ghost" to="/app/settings">
               Ключ в профиле
+            </Link>
+          )}
+          {!isPro && (
+            <Link className="btn ghost" to="/app/pro">
+              Pro
             </Link>
           )}
         </div>

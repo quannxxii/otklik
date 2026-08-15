@@ -11,6 +11,7 @@ import {
   saveTemplates,
 } from "./lib/storage";
 import { subscribeExtensionSync } from "./lib/ext-sync";
+import { clearPro, loadPro, savePro, visibleTemplates, type ProState } from "./lib/pro";
 
 type Store = {
   apps: Application[];
@@ -21,6 +22,8 @@ type Store = {
   setTemplates: (t: LetterTemplate[]) => void;
   platformsDone: Record<string, boolean>;
   setPlatformDone: (id: string, done: boolean) => void;
+  isPro: boolean;
+  setPro: (p: ProState) => void;
   toast: string | null;
   showToast: (msg: string) => void;
 };
@@ -30,8 +33,9 @@ const Ctx = createContext<Store | null>(null);
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [apps, setAppsState] = useState<Application[]>(() => loadApps());
   const [profile, setProfileState] = useState<Profile>(() => loadProfile());
-  const [templates, setTemplatesState] = useState<LetterTemplate[]>(() => loadTemplates());
+  const [templatesRaw, setTemplatesState] = useState<LetterTemplate[]>(() => loadTemplates());
   const [platformsDone, setPlatformsDoneState] = useState(() => loadPlatformsDone());
+  const [pro, setProState] = useState<ProState>(() => loadPro());
   const [toast, setToast] = useState<string | null>(null);
 
   const setApps = useCallback((next: Application[] | ((prev: Application[]) => Application[])) => {
@@ -60,10 +64,21 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     });
   }, []);
 
+  const setPro = useCallback((p: ProState) => {
+    setProState(p);
+    if (p.active) savePro(p);
+    else clearPro();
+  }, []);
+
   const showToast = useCallback((msg: string) => {
     setToast(msg);
     window.setTimeout(() => setToast(null), 1800);
   }, []);
+
+  const templates = useMemo(
+    () => visibleTemplates(templatesRaw, pro.active),
+    [templatesRaw, pro.active],
+  );
 
   useEffect(() => {
     return subscribeExtensionSync((state) => {
@@ -87,10 +102,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setTemplates,
       platformsDone,
       setPlatformDone,
+      isPro: pro.active,
+      setPro,
       toast,
       showToast,
     }),
-    [apps, setApps, profile, setProfile, templates, setTemplates, platformsDone, setPlatformDone, toast, showToast],
+    [apps, setApps, profile, setProfile, templates, setTemplates, platformsDone, setPlatformDone, pro.active, setPro, toast, showToast],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

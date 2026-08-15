@@ -26,11 +26,12 @@ import { RadarPage } from "./pages/Radar";
 import { InsightsPage } from "./pages/Insights";
 import { WeekPage } from "./pages/Week";
 import { CoachPage } from "./pages/Coach";
+import { ProPage } from "./pages/Pro";
 import "./App.css";
 
 export default function App() {
   const navigate = useNavigate();
-  const { toast, profile, setProfile, apps, showToast } = useStore();
+  const { toast, profile, setProfile, apps, showToast, isPro } = useStore();
   const [cmdOpen, setCmdOpen] = useState(false);
 
   useEffect(() => {
@@ -57,6 +58,7 @@ export default function App() {
     { id: "board", label: "Канбан", hint: "pipeline", run: () => navigate("/app?view=kanban") },
     { id: "follow", label: "Follow-up", hint: "кто молчит", run: () => navigate("/app/follow") },
     { id: "letters", label: "Письма", run: () => navigate("/app/letters") },
+    { id: "pro", label: "Pro", hint: "оплата и ключ", run: () => navigate("/app/pro") },
     { id: "settings", label: "Профиль", run: () => navigate("/app/settings") },
     {
       id: "digest",
@@ -85,6 +87,7 @@ export default function App() {
             <NavLink to="/app/coach">Коуч</NavLink>
             <NavLink to="/app/insights">Инсайты</NavLink>
             <NavLink to="/app/letters">Письма</NavLink>
+            <NavLink to="/app/pro">{isPro ? "Pro ✓" : "Pro"}</NavLink>
             <NavLink to="/app/settings">Профиль</NavLink>
           </nav>
           <button type="button" className="btn ghost cmd-btn" onClick={() => setCmdOpen(true)}>
@@ -102,6 +105,7 @@ export default function App() {
           <Route path="coach" element={<CoachPage />} />
           <Route path="insights" element={<InsightsPage />} />
           <Route path="letters" element={<LettersPage />} />
+          <Route path="pro" element={<ProPage />} />
           <Route path="platforms" element={<PlatformsPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Routes>
@@ -762,7 +766,8 @@ function Kanban({
 }
 
 function FollowPage() {
-  const { apps, setApps, profile, templates, showToast } = useStore();
+  const { apps, setApps, profile, templates, showToast, isPro } = useStore();
+  const navigate = useNavigate();
   const list = apps
     .filter((a) => needsFollowUp(a, profile.followDays))
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -770,8 +775,36 @@ function FollowPage() {
 
   return (
     <div className="card">
-      <h2>Кому написать сегодня</h2>
-      <p className="tiny">{list.length ? `Ждут follow-up: ${list.length}` : "Пока некого догонять."}</p>
+      <div className="form-head">
+        <div>
+          <h2>Кому написать сегодня</h2>
+          <p className="tiny">{list.length ? `Ждут follow-up: ${list.length}` : "Пока некого догонять."}</p>
+        </div>
+        {list.length > 0 && (
+          <button
+            type="button"
+            className="btn ghost"
+            onClick={() => {
+              if (!isPro) {
+                showToast("Пакет follow-up — в Pro");
+                navigate("/app/pro");
+                return;
+              }
+              if (!followTpl) return;
+              const pack = list
+                .map(
+                  (a) =>
+                    `--- ${a.company} ---\n` +
+                    renderLetter(followTpl.body, { company: a.company, vacancy: a.role, profile }),
+                )
+                .join("\n\n");
+              void copyText(pack).then(() => showToast(`Скопировано ${list.length} писем`));
+            }}
+          >
+            {isPro ? "Все письма в буфер" : "Все письма · Pro"}
+          </button>
+        )}
+      </div>
       <div className="table-wrap" style={{ marginTop: 12, border: 0 }}>
         <table>
           <thead>
@@ -849,7 +882,7 @@ function FollowPage() {
 }
 
 function LettersPage() {
-  const { profile, templates, setTemplates, apps, showToast } = useStore();
+  const { profile, templates, setTemplates, apps, showToast, isPro } = useStore();
   const [tplId, setTplId] = useState(templates[0]?.id || "");
   const [company, setCompany] = useState("");
   const [vacancy, setVacancy] = useState("");
@@ -858,10 +891,19 @@ function LettersPage() {
 
   return (
     <div className="card">
-      <h2>Сопроводительные</h2>
-      <p className="tiny">
-        {"{{name}} {{role}} {{city}} {{company}} {{vacancy}} {{matched}} {{links}}"}
-      </p>
+      <div className="form-head">
+        <div>
+          <h2>Сопроводительные</h2>
+          <p className="tiny">
+            {"{{name}} {{role}} {{city}} {{company}} {{vacancy}} {{matched}} {{links}}"}
+          </p>
+        </div>
+        {!isPro && (
+          <Link className="btn ghost" to="/app/pro">
+            Pro-шаблоны →
+          </Link>
+        )}
+      </div>
       <div className="tpl-pick">
         {templates.map((t) => (
           <button
@@ -1033,6 +1075,9 @@ function SettingsPage() {
         </div>
       </div>
       <div className="actions">
+        <Link className="btn accent" to="/app/pro">
+          Pro / оплата
+        </Link>
         <button
           className="btn"
           type="button"

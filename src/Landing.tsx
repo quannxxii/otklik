@@ -30,6 +30,7 @@ export function Landing() {
         <div className="landing-nav-right">
           <a href="#demo">Radar</a>
           <a href="#why">почему</a>
+          <a href="#pricing">цены</a>
           <Link className="btn accent" to="/app">
             Открыть
           </Link>
@@ -110,6 +111,45 @@ export function Landing() {
         </div>
       </section>
 
+      <section id="pricing" className="pricing container">
+        <p className="eyebrow mono">цены</p>
+        <h2>Бесплатно пользоваться. Pro — письма и ритм.</h2>
+        <p className="muted pricing-lead">
+          Трекер и Radar без оплаты. Pro разово: шаблоны, пакет follow-up, план коуча в буфер.
+          Продукт в браузере — не созвоны и не сопровождение.
+        </p>
+        <div className="pricing-grid">
+          <article>
+            <p className="mono tiny">free</p>
+            <h3>Отклик</h3>
+            <p className="pro-price">0 ₽</p>
+            <ul>
+              <li>Radar, трекер, канбан</li>
+              <li>Follow-up по одному</li>
+              <li>Локальный коуч на экране</li>
+              <li>Расширение hh / Хабр</li>
+            </ul>
+            <Link className="btn ghost" to="/app">
+              Начать
+            </Link>
+          </article>
+          <article className="featured">
+            <p className="mono tiny">разово · навсегда</p>
+            <h3>Pro</h3>
+            <p className="pro-price">990 ₽</p>
+            <ul>
+              <li>Пять шаблонов под ситуацию</li>
+              <li>Все follow-up письма сразу в буфер</li>
+              <li>Разбор коуча + ритм недели — копируются</li>
+              <li>Ключ в Telegram, живёт в этом браузере</li>
+            </ul>
+            <Link className="btn accent" to="/app/pro">
+              Купить Pro
+            </Link>
+          </article>
+        </div>
+      </section>
+
       <section className="cta container">
         <h2>Хватит стрелять по воробьям.</h2>
         <p className="muted">Собери систему за две минуты. Дальше — только вакансии.</p>
@@ -121,6 +161,9 @@ export function Landing() {
       <footer className="landing-foot container">
         <span className="logo">Отклик</span>
         <span className="muted">Поиск работы как продукт, не лотерея.</span>
+        <Link className="muted" to="/app/pro">
+          Pro · 990 ₽
+        </Link>
       </footer>
     </div>
   );
