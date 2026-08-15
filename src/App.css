@@ -219,6 +219,29 @@
   align-items: center;
 }
 
+.paste-box textarea {
+  min-height: 88px;
+}
+
+.agenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+  padding: 12px 14px;
+}
+
+.agenda-item {
+  border: 1px solid var(--line);
+  background: #fff;
+  padding: 6px 10px;
+  font-size: 13px;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
 .table-wrap { overflow-x: auto; }
 
 table {

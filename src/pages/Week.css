@@ -1,0 +1,51 @@
+.week-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.week-head h2 {
+  font-size: 28px;
+  letter-spacing: -0.03em;
+}
+
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(120px, 1fr));
+  gap: 8px;
+  overflow-x: auto;
+}
+
+.week-col {
+  min-height: 220px;
+  padding: 10px;
+}
+
+.week-col header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  text-transform: capitalize;
+}
+
+.week-item {
+  border: 1px solid var(--line);
+  padding: 8px;
+  margin-bottom: 8px;
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+}
+
+.week-item.interview { border-color: #c5d2ff; background: #f3f6ff; }
+.week-item.test { border-color: #ead7a8; background: #fff9ec; }
+.week-item.follow { border-color: #d7dde8; }
+
+@media (max-width: 900px) {
+  .week-grid { grid-template-columns: repeat(2, minmax(140px, 1fr)); }
+}

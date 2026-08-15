@@ -35,8 +35,8 @@ export function Landing() {
           <span>умно.</span>
         </h1>
         <p className="hero-lead">
-          Не рассылка «всем IT-компаниям». Система: матч по вакансии, письмо за 10 секунд,
-          follow-up, канбан и стрик — данные только в твоём браузере.
+          Не рассылка «всем IT-компаниям». Система: вставил вакансию — пакетный отклик
+          (письмо + вкладка + follow-up), CRM собесов и тестовых, неделя вперёд. Данные только в браузере.
         </p>
         <div className="hero-cta">
           <Link className="btn accent" to="/app/radar">
@@ -71,10 +71,10 @@ export function Landing() {
             Это и есть «вау»: меньше тупых откликов, больше попаданий.
           </p>
           <ul className="bullets">
-            <li>Fit % по твоему стеку</li>
-            <li>Пересечения и пробелы</li>
-            <li>Однокнопочное письмо под вакансию</li>
-            <li>Канбан + follow-up + недельный digest</li>
+            <li>Fit % и парсер вилки / города / стека</li>
+            <li>Пакет: письмо, вкладка, follow-up</li>
+            <li>CRM: собесы, тестовые, причины отказа</li>
+            <li>Неделя + канбан + digest</li>
           </ul>
         </div>
         <div className="demo-panel">
@@ -110,7 +110,7 @@ export function Landing() {
         </article>
         <article>
           <h3>Ритм, не хаос</h3>
-          <p>Цель на день, стрик, heatmap, follow-up через N дней, канбан статусов.</p>
+          <p>Цель на день, стрик, heatmap, календарь собесов на неделю, follow-up через N дней.</p>
         </article>
       </section>
 

@@ -106,6 +106,10 @@
 
 .guess dt { color: var(--muted); }
 
+.radar-score .actions {
+  margin-top: auto;
+}
+
 @media (max-width: 900px) {
   .radar-grid { grid-template-columns: 1fr; }
   .radar-ta, .radar-score { min-height: 240px; }

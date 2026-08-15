@@ -1,5 +1,23 @@
 export type Status = "draft" | "sent" | "reply" | "interview" | "offer" | "reject";
 
+export type TimelineType =
+  | "created"
+  | "sent"
+  | "reply"
+  | "interview"
+  | "test"
+  | "offer"
+  | "reject"
+  | "followup"
+  | "note";
+
+export type TimelineEvent = {
+  id: string;
+  at: string;
+  type: TimelineType;
+  text: string;
+};
+
 export type Application = {
   id: string;
   company: string;
@@ -16,7 +34,24 @@ export type Application = {
   salary?: string;
   contact?: string;
   interviewNotes?: string;
+  city?: string;
+  stack?: string;
+  jdRaw?: string;
+  interviewAt?: string;
+  testDeadline?: string;
+  rejectReason?: string;
+  timeline?: TimelineEvent[];
 };
+
+export const REJECT_REASONS = [
+  "Не ответили",
+  "Слабый стек / нет опыта",
+  "Вилка не сошлась",
+  "Сам отказался",
+  "После тестового",
+  "После собеса",
+  "Другое",
+] as const;
 
 export type Profile = {
   name: string;
@@ -141,6 +176,10 @@ Full-time, готов к тестовому.
 
 export const SAMPLE_JD = `Frontend / Fullstack Developer (Vue / React)
 Компания: СеверТех
+https://hh.ru/vacancy/12345678
+
+Зарплата: от 180 000 до 250 000 ₽ net
+Город: Москва / гибрид / remote
 
 Мы ищем разработчика в продуктовую команду.
 Стек: Vue 3, TypeScript, PHP, PostgreSQL, REST API.
@@ -149,6 +188,4 @@ export const SAMPLE_JD = `Frontend / Fullstack Developer (Vue / React)
 Задачи:
 — фичи на клиенте и чуть бэкенда
 — код-ревью, оценка задач
-— довести до продакшена
-
-Офис Москва / гибрид / remote по договорённости.`;
+— довести до продакшена`;

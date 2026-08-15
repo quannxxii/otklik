@@ -36,7 +36,19 @@ export function InsightsPage() {
       byPlatform[a.platform] = (byPlatform[a.platform] || 0) + 1;
     });
 
-    return { total, byStatus, replyRate, interviewRate, offerRate, avgFit, salaries, byPlatform, sentLike };
+    const byReject: Record<string, number> = {};
+    apps
+      .filter((a) => a.status === "reject")
+      .forEach((a) => {
+        const key = a.rejectReason || "не указана";
+        byReject[key] = (byReject[key] || 0) + 1;
+      });
+
+    const upcoming = apps.filter(
+      (a) => a.interviewAt || a.testDeadline,
+    ).length;
+
+    return { total, byStatus, replyRate, interviewRate, offerRate, avgFit, salaries, byPlatform, sentLike, byReject, upcoming };
   }, [apps]);
 
   const maxStatus = Math.max(1, ...Object.values(stats.byStatus));
@@ -54,6 +66,7 @@ export function InsightsPage() {
         <div className="stat"><b>{stats.interviewRate}%</b><span className="mono">до собеса</span></div>
         <div className="stat"><b>{stats.offerRate}%</b><span className="mono">оффер</span></div>
         <div className="stat"><b>{stats.avgFit ?? "—"}{stats.avgFit != null ? "%" : ""}</b><span className="mono">avg match</span></div>
+        <div className="stat"><b>{stats.upcoming}</b><span className="mono">собес/тест</span></div>
       </div>
 
       <div className="insights-grid">
@@ -98,6 +111,24 @@ export function InsightsPage() {
                   <span>{s}</span>
                 </li>
               ))}
+            </ul>
+          )}
+        </section>
+
+        <section className="card">
+          <h3>Причины отказа</h3>
+          {!Object.keys(stats.byReject).length ? (
+            <p className="muted">Когда ставишь «отказ» — укажи причину в карточке.</p>
+          ) : (
+            <ul className="plat-list">
+              {Object.entries(stats.byReject)
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, n]) => (
+                  <li key={name}>
+                    <span>{name}</span>
+                    <b className="mono">{n}</b>
+                  </li>
+                ))}
             </ul>
           )}
         </section>

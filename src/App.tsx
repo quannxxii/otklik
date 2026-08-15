@@ -14,13 +14,16 @@ import {
   today,
   uid,
 } from "./lib/storage";
-import { buildWeeklyDigest, heatmapDays, streakCount } from "./lib/match";
+import { analyzeVacancy, buildWeeklyDigest, heatmapDays, streakCount } from "./lib/match";
+import { parseVacancy } from "./lib/parse";
+import { event, pushEvent, weekItems, withStatusChange } from "./lib/crm";
 import { maybeNotifyFollowUps } from "./lib/notify";
 import { CommandPalette } from "./components/CommandPalette";
 import { Onboarding } from "./components/Onboarding";
 import { DetailDrawer } from "./components/DetailDrawer";
 import { RadarPage } from "./pages/Radar";
 import { InsightsPage } from "./pages/Insights";
+import { WeekPage } from "./pages/Week";
 import "./App.css";
 
 export default function App() {
@@ -46,6 +49,7 @@ export default function App() {
   const cmdItems = [
     { id: "radar", label: "Vacancy Radar", hint: "матч по вакансии", run: () => navigate("/app/radar") },
     { id: "track", label: "Трекер", hint: "таблица", run: () => navigate("/app") },
+    { id: "week", label: "Неделя", hint: "собесы и тестовые", run: () => navigate("/app/week") },
     { id: "insights", label: "Инсайты", hint: "воронка", run: () => navigate("/app/insights") },
     { id: "board", label: "Канбан", hint: "pipeline", run: () => navigate("/app?view=kanban") },
     { id: "follow", label: "Follow-up", hint: "кто молчит", run: () => navigate("/app/follow") },
@@ -73,6 +77,7 @@ export default function App() {
           <nav className="app-nav">
             <NavLink to="/app" end>Трекер</NavLink>
             <NavLink to="/app/radar">Radar</NavLink>
+            <NavLink to="/app/week">Неделя</NavLink>
             <NavLink to="/app/follow">Follow-up</NavLink>
             <NavLink to="/app/insights">Инсайты</NavLink>
             <NavLink to="/app/letters">Письма</NavLink>
@@ -88,6 +93,7 @@ export default function App() {
         <Routes>
           <Route index element={<TrackerPage />} />
           <Route path="radar" element={<RadarPage />} />
+          <Route path="week" element={<WeekPage />} />
           <Route path="follow" element={<FollowPage />} />
           <Route path="insights" element={<InsightsPage />} />
           <Route path="letters" element={<LettersPage />} />
@@ -113,6 +119,7 @@ function TrackerPage() {
   const [fPlatform, setFPlatform] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [paste, setPaste] = useState("");
 
   const emptyForm = {
     company: "",
@@ -125,6 +132,10 @@ function TrackerPage() {
     note: "",
     letterTpl: templates[0]?.id || "fullstack",
     fitScore: undefined as number | undefined,
+    salary: "",
+    city: "",
+    stack: "",
+    jdRaw: "",
   };
   const [form, setForm] = useState(emptyForm);
 
@@ -157,6 +168,11 @@ function TrackerPage() {
     }
   }, [showToast]);
 
+  useEffect(() => {
+    const open = new URLSearchParams(window.location.search).get("open");
+    if (open) setSelectedId(open);
+  }, []);
+
   const goal = profile.dailyGoal || 10;
   const todayCount = apps.filter((a) => a.date === today() && a.status !== "draft").length;
   const streak = streakCount(apps);
@@ -186,7 +202,29 @@ function TrackerPage() {
     return list;
   }, [apps, q, fStatus, fPlatform, profile.followDays]);
 
-  function saveApp(copyLetter: boolean) {
+  function parsePasteIntoForm() {
+    const raw = paste.trim();
+    if (!raw) return;
+    const parsed = parseVacancy(raw);
+    const match = analyzeVacancy(raw, profile.skills);
+    setForm((f) => ({
+      ...f,
+      company: parsed.company || match.guessedCompany || f.company,
+      role: parsed.role || match.guessedRole || f.role,
+      platform: parsed.platform || f.platform,
+      url: parsed.url || match.urls[0] || f.url,
+      letterTpl: match.suggestedTpl,
+      fitScore: match.score,
+      note: match.matched.length ? `match ${match.score}% · ${match.matched.join(", ")}` : f.note,
+      salary: parsed.salary || f.salary,
+      city: parsed.city || f.city,
+      stack: parsed.stack.join(", ") || f.stack,
+      jdRaw: raw,
+    }));
+    showToast(match.score ? `Разобрано · match ${match.score}%` : "Разобрано");
+  }
+
+  function saveApp(copyLetter: boolean, openUrl = false) {
     const company = form.company.trim();
     const role = form.role.trim();
     if (!company || !role) return;
@@ -194,7 +232,8 @@ function TrackerPage() {
     let followUp = form.followUp;
     if (!followUp && form.status === "sent") followUp = addDays(form.date, profile.followDays);
 
-    const payload: Application = {
+    const prev = editId ? apps.find((a) => a.id === editId) : undefined;
+    let payload: Application = {
       id: editId || uid(),
       company,
       role,
@@ -207,7 +246,26 @@ function TrackerPage() {
       letterTpl: form.letterTpl,
       updatedAt: today(),
       fitScore: form.fitScore,
+      salary: form.salary || prev?.salary,
+      city: form.city || prev?.city,
+      stack: form.stack || prev?.stack,
+      jdRaw: form.jdRaw || prev?.jdRaw,
+      contact: prev?.contact,
+      interviewNotes: prev?.interviewNotes,
+      interviewAt: prev?.interviewAt,
+      testDeadline: prev?.testDeadline,
+      rejectReason: prev?.rejectReason,
+      timeline: prev?.timeline,
     };
+
+    if (!prev) {
+      payload = {
+        ...payload,
+        timeline: [event(form.status === "sent" ? "sent" : "created", STATUS_LABEL[form.status])],
+      };
+    } else if (prev.status !== form.status) {
+      payload = withStatusChange({ ...payload, status: prev.status }, form.status);
+    }
 
     if (!editId) {
       const dup = apps.find(
@@ -235,13 +293,16 @@ function TrackerPage() {
             profile,
             matched: payload.note.includes("·") ? payload.note.split("·")[1]?.trim() : undefined,
           }),
-        ).then(() => showToast("Сохранено и письмо скопировано"));
+        ).then(() => showToast(openUrl ? "Пакет: письмо скопировано, отклик записан" : "Сохранено и письмо скопировано"));
       }
     } else {
       showToast(editId ? "Сохранено" : "Отклик добавлен");
     }
 
+    if (openUrl && payload.url) window.open(payload.url, "_blank", "noopener,noreferrer");
+
     setEditId(null);
+    setPaste("");
     setForm({ ...emptyForm, date: today(), followUp: addDays(today(), profile.followDays) });
   }
 
@@ -263,11 +324,19 @@ function TrackerPage() {
       note: app.note,
       letterTpl: app.letterTpl,
       fitScore: app.fitScore,
+      salary: app.salary || "",
+      city: app.city || "",
+      stack: app.stack || "",
+      jdRaw: app.jdRaw || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const selected = apps.find((a) => a.id === selectedId) || null;
+  const agenda = useMemo(
+    () => weekItems(apps, today()).items.filter((i) => i.date === today()),
+    [apps],
+  );
 
   return (
     <div>
@@ -339,12 +408,42 @@ function TrackerPage() {
         ))}
       </div>
 
+      {agenda.length > 0 && (
+        <div className="card agenda">
+          <b>Сегодня</b>
+          {agenda.map((item) => (
+            <button
+              key={`${item.kind}-${item.app.id}`}
+              type="button"
+              className="agenda-item"
+              onClick={() => setSelectedId(item.app.id)}
+            >
+              <span className="mono tiny">{item.label}</span>
+              {item.app.company} · {item.app.role}
+            </button>
+          ))}
+        </div>
+      )}
+
       <form className="card form" onSubmit={onSubmit}>
         <div className="form-head">
           <h2>{editId ? "Редактирование" : "Новый отклик"}</h2>
           <button type="button" className="btn ghost" onClick={() => navigate("/app/radar")}>
             Сначала Radar →
           </button>
+        </div>
+        <div className="field paste-box">
+          <label>Вставь вакансию целиком (hh / Хабр / LinkedIn)</label>
+          <textarea
+            value={paste}
+            onChange={(e) => setPaste(e.target.value)}
+            placeholder="Текст + ссылка. Браузер не скачает hh сам — нужен Ctrl+V."
+          />
+          <div className="actions" style={{ marginTop: 8 }}>
+            <button type="button" className="btn ghost" onClick={parsePasteIntoForm} disabled={!paste.trim()}>
+              Разобрать в форму
+            </button>
+          </div>
         </div>
         <div className="grid-4">
           <div className="field">
@@ -398,9 +497,23 @@ function TrackerPage() {
             </select>
           </div>
         </div>
-        <div className="field">
-          <label>Заметка {form.fitScore != null ? `· match ${form.fitScore}%` : ""}</label>
-          <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="стек, вилка, контакт" />
+        <div className="grid-4">
+          <div className="field">
+            <label>Вилка</label>
+            <input value={form.salary} onChange={(e) => setForm({ ...form, salary: e.target.value })} placeholder="от 180к net" />
+          </div>
+          <div className="field">
+            <label>Город</label>
+            <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Стек</label>
+            <input value={form.stack} onChange={(e) => setForm({ ...form, stack: e.target.value })} />
+          </div>
+          <div className="field">
+            <label>Заметка {form.fitScore != null ? `· match ${form.fitScore}%` : ""}</label>
+            <input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} placeholder="контакт, детали" />
+          </div>
         </div>
         <div className="actions">
           <button className="btn" type="submit">
@@ -408,6 +521,9 @@ function TrackerPage() {
           </button>
           <button className="btn ghost" type="button" onClick={() => saveApp(true)}>
             Добавить + письмо
+          </button>
+          <button className="btn accent" type="button" onClick={() => saveApp(true, true)}>
+            Пакет: письмо + вкладка
           </button>
           {editId && (
             <button
@@ -494,17 +610,14 @@ function TrackerPage() {
           apps={filtered}
           onStatus={(id, status) => {
             setApps((prev) =>
-              prev.map((a) =>
-                a.id === id
-                  ? {
-                      ...a,
-                      status,
-                      updatedAt: today(),
-                      followUp:
-                        status === "sent" && !a.followUp ? addDays(a.date || today(), profile.followDays) : a.followUp,
-                    }
-                  : a,
-              ),
+              prev.map((a) => {
+                if (a.id !== id) return a;
+                let next = withStatusChange(a, status);
+                if (status === "sent" && !next.followUp) {
+                  next = { ...next, followUp: addDays(next.date || today(), profile.followDays) };
+                }
+                return next;
+              }),
             );
           }}
           onEdit={startEdit}
@@ -702,12 +815,15 @@ function FollowPage() {
                         setApps((prev) =>
                           prev.map((x) =>
                             x.id === a.id
-                              ? {
-                                  ...x,
-                                  followUp: addDays(today(), profile.followDays),
-                                  note: `${x.note ? `${x.note} · ` : ""}follow-up ${today()}`,
-                                  updatedAt: today(),
-                                }
+                              ? pushEvent(
+                                  {
+                                    ...x,
+                                    followUp: addDays(today(), profile.followDays),
+                                    note: `${x.note ? `${x.note} · ` : ""}follow-up ${today()}`,
+                                  },
+                                  "followup",
+                                  `follow-up ${today()}`,
+                                )
                               : x,
                           ),
                         );

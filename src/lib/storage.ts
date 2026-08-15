@@ -1,4 +1,4 @@
-import type { Application, LetterTemplate, Profile } from "../types";
+import type { Application, LetterTemplate, Profile, TimelineType } from "../types";
 import { DEFAULT_PROFILE, DEFAULT_TEMPLATES } from "../types";
 
 const APPS_KEY = "otklik-apps-v1";
@@ -41,7 +41,19 @@ function write<T>(key: string, value: T) {
 }
 
 export function loadApps(): Application[] {
-  return read<Application[]>(APPS_KEY, []);
+  return read<Application[]>(APPS_KEY, []).map((a) => ({
+    ...a,
+    timeline: a.timeline?.length
+      ? a.timeline
+      : [
+          {
+            id: uid(),
+            at: a.date || today(),
+            type: (a.status === "draft" ? "created" : a.status) as TimelineType,
+            text: a.status,
+          },
+        ],
+  }));
 }
 
 export function saveApps(apps: Application[]) {
@@ -153,6 +165,11 @@ export function appsToCsv(apps: Application[]) {
     "salary",
     "contact",
     "interviewNotes",
+    "city",
+    "stack",
+    "interviewAt",
+    "testDeadline",
+    "rejectReason",
   ];
   const rows = apps.map((a) =>
     header
