@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Profile } from "../types";
 import { ensureNotifyPermission } from "../lib/notify";
 import "./Onboarding.css";
@@ -9,12 +10,14 @@ type Props = {
 };
 
 export function Onboarding({ profile, onDone }: Props) {
+  const navigate = useNavigate();
   const [step, setStep] = useState(0);
   const [form, setForm] = useState(profile);
 
   const steps = [
     {
-      title: "Как тебя зовут?",
+      title: "Кто ты",
+      lead: "Имя и роль попадут в письма. Потом можно поменять в Профиле.",
       body: (
         <div className="grid-2">
           <div className="field">
@@ -38,20 +41,24 @@ export function Onboarding({ profile, onDone }: Props) {
       ),
     },
     {
-      title: "Твой стек",
+      title: "Стек для Radar",
+      lead: "Через запятую. Match считается по стеку вакансии — чем точнее список, тем честнее %.",
       body: (
         <div className="field">
-          <label>Через запятую — Radar будет матчить вакансии</label>
+          <label>Навыки</label>
           <textarea
+            autoFocus
             value={form.skills}
             onChange={(e) => setForm({ ...form, skills: e.target.value })}
             style={{ minHeight: 120 }}
+            placeholder="TypeScript, Vue, PHP, Flutter…"
           />
         </div>
       ),
     },
     {
-      title: "Ссылки в письма",
+      title: "Почти готово",
+      lead: "Ссылки в письма и цель на день (точечные, не спам). Дальше — экран Сегодня.",
       body: (
         <div className="grid-2">
           {(
@@ -67,13 +74,6 @@ export function Onboarding({ profile, onDone }: Props) {
               <input value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} />
             </div>
           ))}
-        </div>
-      ),
-    },
-    {
-      title: "Ритм поиска",
-      body: (
-        <div className="grid-2">
           <div className="field">
             <label>Цель откликов / день</label>
             <input
@@ -81,7 +81,7 @@ export function Onboarding({ profile, onDone }: Props) {
               min={1}
               max={30}
               value={form.dailyGoal}
-              onChange={(e) => setForm({ ...form, dailyGoal: Number(e.target.value) || 10 })}
+              onChange={(e) => setForm({ ...form, dailyGoal: Number(e.target.value) || 5 })}
             />
           </div>
           <div className="field">
@@ -94,14 +94,6 @@ export function Onboarding({ profile, onDone }: Props) {
               onChange={(e) => setForm({ ...form, followDays: Number(e.target.value) || 5 })}
             />
           </div>
-          <label className="checkline">
-            <input
-              type="checkbox"
-              checked={form.notifyFollowUps}
-              onChange={(e) => setForm({ ...form, notifyFollowUps: e.target.checked })}
-            />
-            Напоминать о follow-up в браузере
-          </label>
         </div>
       ),
     },
@@ -110,6 +102,7 @@ export function Onboarding({ profile, onDone }: Props) {
   async function finish() {
     if (form.notifyFollowUps) await ensureNotifyPermission();
     onDone({ ...form, onboardingDone: true, name: form.name.trim() || "Кандидат" });
+    navigate("/app");
   }
 
   return (
@@ -119,6 +112,7 @@ export function Onboarding({ profile, onDone }: Props) {
           шаг {step + 1}/{steps.length}
         </p>
         <h2>{steps[step].title}</h2>
+        <p className="muted onb-lead">{steps[step].lead}</p>
         {steps[step].body}
         <div className="actions">
           {step > 0 && (
@@ -137,11 +131,11 @@ export function Onboarding({ profile, onDone }: Props) {
             </button>
           ) : (
             <button type="button" className="btn accent" onClick={() => void finish()}>
-              В бой
+              На Сегодня
             </button>
           )}
         </div>
-        <p className="tiny">Данные останутся в этом браузере. Потом можно поменять в Профиле.</p>
+        <p className="tiny">Данные только в этом браузере. Бэкап — в Профиле, если важно не потерять.</p>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ import {
   telegramPayLink,
 } from "../lib/pro";
 import { copyText } from "../lib/storage";
+import { LetterPreview } from "../components/LetterPreview";
 import "./Pro.css";
 
 export function ProPage() {
@@ -64,7 +65,7 @@ export function ProPage() {
             ))}
           </ul>
           <Link className="btn ghost" to="/app">
-            В трекер
+            На Сегодня
           </Link>
         </article>
         <article className="featured">
@@ -83,6 +84,8 @@ export function ProPage() {
           </a>
         </article>
       </div>
+
+      <LetterPreview compact />
 
       <div className="pro-split">
         <section className="card pro-activate">

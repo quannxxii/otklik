@@ -16,7 +16,7 @@
     github: "",
     portfolio: "",
     skills: "JavaScript, TypeScript, Vue, React, PHP, Flutter, Dart, Supabase, PostgreSQL, Next.js",
-    dailyGoal: 10,
+    dailyGoal: 5,
     followDays: 5,
     notifyFollowUps: true,
     onboardingDone: false,
@@ -41,7 +41,7 @@
     {
       id: "targeted",
       title: "Под вакансию",
-      body: "Привет! Я {{name}}.\n\nУвидел «{{vacancy}}» в {{company}} — откликаюсь точечно.\nВ требованиях вижу {{matched}}. Это мой основной контур: {{role}}, {{city}}.\n\nГотов тестовое или короткий созвон.\n\n{{links}}",
+      body: "Привет! Я {{name}}.\n\n«{{vacancy}}» в {{company}} — откликаюсь точечно по пересечениям:\n{{matched_lines}}\n\n{{role}}, {{city}}. Готов тестовое или короткий созвон.\n\n{{links}}",
     },
     {
       id: "followup",
@@ -54,22 +54,27 @@
     {
       id: "pro-senior",
       title: "Pro · Senior",
-      body: "Привет! Я {{name}}, {{role}}, {{city}}.\n\nСмотрю «{{vacancy}}» в {{company}}. По стеку пересечение: {{matched}}.\nВ коммерции закрывал фичи end-to-end — детали в портфолио.\n\nГотов короткий созвон или тестовое на этой неделе.\n\n{{links}}",
+      body: "Привет! {{name}}, {{role}}.\n\n«{{vacancy}}» / {{company}} — откликаюсь по пересечениям:\n{{matched_lines}}\n\nЗакрываю фичи end-to-end; портфолио ниже. Готов созвон или тестовое на этой неделе.\n\n{{links}}",
     },
     {
       id: "pro-cold",
       title: "Pro · Cold HR",
-      body: "Привет! Нашёл вакансию «{{vacancy}}» — {{company}}.\n\nКоротко: {{role}}, {{city}}. Релевантный стек: {{matched}}.\nЕсли резюме ок — готов тестовое без долгой переписки.\n\n{{name}}\n{{links}}",
+      body: "Привет! Вакансия «{{vacancy}}» — {{company}}.\n\n{{role}}, {{city}}. Почему я:\n{{matched_lines}}\n\nЕсли резюме ок — тестовое без долгой переписки.\n\n{{name}}\n{{links}}",
+    },
+    {
+      id: "pro-after-test",
+      title: "Pro · После тестового",
+      body: "Привет! Сдал тестовое по «{{vacancy}}» ({{company}}).\n\nПодскажите статус? Правки сделаю быстро. Готов следующий этап на этой неделе.\n\n{{name}}\n{{links}}",
     },
     {
       id: "pro-vue",
       title: "Pro · Vue / PHP",
-      body: "Привет! Я {{name}}, fullstack (Vue / PHP), {{city}}.\n\nОтклик на «{{vacancy}}» в {{company}}. Пересечения: {{matched}}.\nУмею довести фичу с клиента до бэка и продакшена.\n\nТестовое могу взять сразу.\n\n{{links}}",
+      body: "Привет! {{name}}, Vue / PHP, {{city}}.\n\nНа «{{vacancy}}» в {{company}} закрываю:\n{{matched_lines}}\n\nФича с клиента до бэка и прода. Тестовое могу сразу.\n\n{{links}}",
     },
     {
       id: "pro-flutter",
       title: "Pro · Flutter",
-      body: "Привет! Я {{name}}. Flutter / Dart, {{city}}.\n\nИнтересна «{{vacancy}}» в {{company}}. По стеку: {{matched}}.\nЕсть свой продукт на Flutter + Supabase — могу показать.\n\nГотов тестовое или короткий созвон.\n\n{{links}}",
+      body: "Привет! {{name}}, Flutter / Dart, {{city}}.\n\nИнтересна «{{vacancy}}» в {{company}}:\n{{matched_lines}}\n\nЕсть свой продукт на Flutter + Supabase — покажу. Готов тестовое или короткий созвон.\n\n{{links}}",
     },
   ];
 
@@ -293,6 +298,14 @@
       vars.matched ||
       parseSkills(profile.skills).slice(0, 6).join(", ") ||
       "мой стек";
+    const matchedLines =
+      matched
+        .split(/[,;]+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 6)
+        .map((s) => `— ${s}`)
+        .join("\n") || `— ${matched}`;
     return String(body || "")
       .replaceAll("{{name}}", profile.name || "Кандидат")
       .replaceAll("{{role}}", profile.role || "разработчик")
@@ -300,6 +313,7 @@
       .replaceAll("{{company}}", vars.company || "компании")
       .replaceAll("{{vacancy}}", vars.vacancy || "вакансию")
       .replaceAll("{{matched}}", matched)
+      .replaceAll("{{matched_lines}}", matchedLines)
       .replaceAll("{{links}}", links || "")
       .trim();
   }
@@ -551,6 +565,37 @@
     return true;
   }
 
+  function markAppSent(apps, id, followDays) {
+    const list = (apps || []).slice();
+    const i = list.findIndex((a) => a && a.id === id);
+    if (i < 0) return null;
+    const prev = list[i];
+    const day = today();
+    const days = followDays || 5;
+    list[i] = {
+      ...prev,
+      status: "sent",
+      date: prev.date || day,
+      followUp: addDays(day, days),
+      updatedAt: nowIso(),
+      note:
+        String(prev.note || "")
+          .replace(/письмо готово[^.]*\.?/gi, "")
+          .replace(/— отправь на площадке сам/gi, "")
+          .trim() || "отправлено из расширения",
+      timeline: [
+        ...(prev.timeline || []),
+        {
+          id: uid(),
+          at: nowIso(),
+          type: "sent",
+          text: "Отмечено как отправлено из расширения",
+        },
+      ],
+    };
+    return list;
+  }
+
   root.OtklikCore = {
     KEYS,
     DEFAULT_PROFILE,
@@ -559,6 +604,7 @@
     analyzeVacancy,
     letterFor,
     buildApp,
+    markAppSent,
     mergeState,
     chromeGet,
     chromeSet,
@@ -568,5 +614,9 @@
     fillLetterBox,
     highlightApply,
     findLetterBox,
+    today,
+    addDays,
+    nowIso,
+    uid,
   };
 })(typeof globalThis !== "undefined" ? globalThis : self);

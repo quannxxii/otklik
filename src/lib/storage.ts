@@ -177,6 +177,13 @@ export function renderLetter(
           .slice(0, 6)
           .join(", ")
       : "мой стек");
+  const matchedLines = matched
+    .split(/[,;]+/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .slice(0, 6)
+    .map((s) => `— ${s}`)
+    .join("\n") || `— ${matched}`;
   return body
     .replaceAll("{{name}}", vars.profile.name || "Кандидат")
     .replaceAll("{{role}}", vars.profile.role || "разработчик")
@@ -184,6 +191,7 @@ export function renderLetter(
     .replaceAll("{{company}}", vars.company || "компании")
     .replaceAll("{{vacancy}}", vars.vacancy || "вакансию")
     .replaceAll("{{matched}}", matched)
+    .replaceAll("{{matched_lines}}", matchedLines)
     .replaceAll("{{links}}", links || "")
     .replaceAll("{{portfolio}}", vars.profile.portfolio || "")
     .replaceAll("{{github}}", vars.profile.github || "")

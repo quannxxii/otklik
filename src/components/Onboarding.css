@@ -29,7 +29,13 @@
 .onb h2 {
   font-size: 26px;
   letter-spacing: -0.03em;
+  margin-bottom: 8px;
+}
+
+.onb-lead {
   margin-bottom: 14px;
+  font-size: 14px;
+  max-width: 36em;
 }
 
 .checkline {

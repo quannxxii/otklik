@@ -107,10 +107,8 @@
   margin-top: 14px;
 }
 
-.pro-split {
-  display: grid;
-  grid-template-columns: 1.3fr 0.7fr;
-  gap: 12px;
+.pro-page .letter-preview {
+  margin: 0 0 18px;
 }
 
 .pro-activate h3,

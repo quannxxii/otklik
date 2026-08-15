@@ -111,7 +111,7 @@ export const DEFAULT_PROFILE: Profile = {
   github: "",
   portfolio: "",
   skills: "JavaScript, TypeScript, Vue, React, PHP, Flutter, Dart, Supabase, PostgreSQL, Next.js",
-  dailyGoal: 10,
+  dailyGoal: 5,
   followDays: 5,
   notifyFollowUps: true,
   onboardingDone: false,
@@ -156,10 +156,10 @@ Full-time, готов к тестовому.
     title: "Под вакансию",
     body: `Привет! Я {{name}}.
 
-Увидел «{{vacancy}}» в {{company}} — откликаюсь точечно.
-В требованиях вижу {{matched}}. Это мой основной контур: {{role}}, {{city}}.
+«{{vacancy}}» в {{company}} — откликаюсь точечно по пересечениям:
+{{matched_lines}}
 
-Готов тестовое или короткий созвон.
+{{role}}, {{city}}. Готов тестовое или короткий созвон.
 
 {{links}}`,
   },

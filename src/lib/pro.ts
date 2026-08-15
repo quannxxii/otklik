@@ -19,7 +19,7 @@ export const TG_URL = `https://t.me/${TG_HANDLE}`;
 export const PRO_PRICE = "990 ₽";
 
 export const PRO_PERKS = [
-  { title: "Шаблоны под ситуацию", text: "Senior, cold HR, после тестового, Vue, Flutter — в Radar и письмах." },
+  { title: "Письма под пересечения", text: "Senior, cold HR, после тестового, Vue, Flutter — список матчей, не вода." },
   { title: "Пакет follow-up", text: "Все письма тем, кто молчит, сразу в буфер. Не по одному." },
   { title: "План коуча в текст", text: "Разбор воронки + ритм на неделю копируются одним кликом." },
 ];
@@ -35,22 +35,24 @@ export const PRO_TEMPLATES: LetterTemplate[] = [
   {
     id: "pro-senior",
     title: "Pro · Senior",
-    body: `Привет! Я {{name}}, {{role}}, {{city}}.
+    body: `Привет! {{name}}, {{role}}.
 
-Смотрю «{{vacancy}}» в {{company}}. По стеку пересечение: {{matched}}.
-В коммерции закрывал фичи end-to-end — детали в портфолио.
+«{{vacancy}}» / {{company}} — откликаюсь по пересечениям:
+{{matched_lines}}
 
-Готов короткий созвон или тестовое на этой неделе.
+Закрываю фичи end-to-end; портфолио ниже. Готов созвон или тестовое на этой неделе.
 
 {{links}}`,
   },
   {
     id: "pro-cold",
     title: "Pro · Cold HR",
-    body: `Привет! Нашёл вакансию «{{vacancy}}» — {{company}}.
+    body: `Привет! Вакансия «{{vacancy}}» — {{company}}.
 
-Коротко: {{role}}, {{city}}. Релевантный стек: {{matched}}.
-Если резюме ок — готов тестовое без долгой переписки.
+{{role}}, {{city}}. Почему я:
+{{matched_lines}}
+
+Если резюме ок — тестовое без долгой переписки.
 
 {{name}}
 {{links}}`,
@@ -58,10 +60,9 @@ export const PRO_TEMPLATES: LetterTemplate[] = [
   {
     id: "pro-after-test",
     title: "Pro · После тестового",
-    body: `Привет! Сдал тестовое по «{{vacancy}}» в {{company}}.
+    body: `Привет! Сдал тестовое по «{{vacancy}}» ({{company}}).
 
-Подскажите статус? Если нужны правки — сделаю быстро.
-Готов следующий этап на этой неделе.
+Подскажите статус? Правки сделаю быстро. Готов следующий этап на этой неделе.
 
 {{name}}
 {{links}}`,
@@ -69,24 +70,24 @@ export const PRO_TEMPLATES: LetterTemplate[] = [
   {
     id: "pro-vue",
     title: "Pro · Vue / PHP",
-    body: `Привет! Я {{name}}, fullstack (Vue / PHP), {{city}}.
+    body: `Привет! {{name}}, Vue / PHP, {{city}}.
 
-Отклик на «{{vacancy}}» в {{company}}. Пересечения: {{matched}}.
-Умею довести фичу с клиента до бэка и продакшена.
+На «{{vacancy}}» в {{company}} закрываю:
+{{matched_lines}}
 
-Тестовое могу взять сразу.
+Фича с клиента до бэка и прода. Тестовое могу сразу.
 
 {{links}}`,
   },
   {
     id: "pro-flutter",
     title: "Pro · Flutter",
-    body: `Привет! Я {{name}}. Flutter / Dart, {{city}}.
+    body: `Привет! {{name}}, Flutter / Dart, {{city}}.
 
-Интересна «{{vacancy}}» в {{company}}. По стеку: {{matched}}.
-Есть свой продукт на Flutter + Supabase — могу показать.
+Интересна «{{vacancy}}» в {{company}}:
+{{matched_lines}}
 
-Готов тестовое или короткий созвон.
+Есть свой продукт на Flutter + Supabase — покажу. Готов тестовое или короткий созвон.
 
 {{links}}`,
   },

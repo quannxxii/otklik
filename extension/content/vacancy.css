@@ -39,7 +39,8 @@
   letter-spacing: -0.03em;
 }
 
-.otklik-muted { color: #5a6478; font-size: 12px; margin: 0 0 10px; }
+.otklik-sync-ok { color: #1f7a45; }
+.otklik-sync-warn { color: #9a6b12; }
 
 .otklik-score {
   font-size: 28px;
@@ -77,6 +78,13 @@
   font-size: 12px;
   cursor: pointer;
 }
+
+.otklik-btn.ok {
+  background: #1f7a45;
+  border-color: #1f7a45;
+}
+
+.otklik-btn[hidden] { display: none !important; }
 
 .otklik-btn.ghost {
   background: #fff;

@@ -11,7 +11,7 @@ import {
   saveProfile,
   saveTemplates,
 } from "./lib/storage";
-import { subscribeExtensionSync } from "./lib/ext-sync";
+import { subscribeExtPresence, subscribeExtensionSync, type ExtSyncStatus } from "./lib/ext-sync";
 import { clearPro, resolvePro, savePro, stripProTemplates, visibleTemplates, type ProState } from "./lib/pro";
 import { DEFAULT_PROFILE } from "./types";
 
@@ -26,6 +26,7 @@ type Store = {
   setPlatformDone: (id: string, done: boolean) => void;
   isPro: boolean;
   setPro: (p: ProState) => void;
+  extSync: ExtSyncStatus;
   toast: string | null;
   showToast: (msg: string) => void;
 };
@@ -56,6 +57,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [templatesRaw, setTemplatesState] = useState<LetterTemplate[]>(() => loadTemplates());
   const [platformsDone, setPlatformsDoneState] = useState(() => loadPlatformsDone());
   const [pro, setProState] = useState<ProState>(() => loadProSafe());
+  const [extSync, setExtSync] = useState<ExtSyncStatus>("checking");
   const [toast, setToast] = useState<string | null>(null);
   const toastTimer = useRef<number | null>(null);
 
@@ -131,6 +133,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     [templatesRaw, pro.active],
   );
 
+  useEffect(() => subscribeExtPresence(setExtSync), []);
+
   useEffect(() => {
     return subscribeExtensionSync((state) => {
       if (state.apps !== undefined) {
@@ -159,10 +163,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setPlatformDone,
       isPro: pro.active,
       setPro,
+      extSync,
       toast,
       showToast,
     }),
-    [apps, setApps, profile, setProfile, templates, setTemplates, platformsDone, setPlatformDone, pro.active, setPro, toast, showToast],
+    [apps, setApps, profile, setProfile, templates, setTemplates, platformsDone, setPlatformDone, pro.active, setPro, extSync, toast, showToast],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

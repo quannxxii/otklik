@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { SAMPLE_JD } from "./types";
 import { analyzeVacancy } from "./lib/match";
+import { LetterPreview } from "./components/LetterPreview";
 import "./Landing.css";
 
 const DEMO_SKILLS =
@@ -32,7 +33,7 @@ export function Landing() {
           <a href="#why">почему</a>
           <a href="#pricing">цены</a>
           <Link className="btn accent" to="/app">
-            Открыть
+            Сегодня
           </Link>
         </div>
       </header>
@@ -41,15 +42,15 @@ export function Landing() {
         <p className="hero-brand">Отклик</p>
         <h1>Точечный поиск. Без спама.</h1>
         <p className="hero-lead">
-          Вставил вакансию — письмо, follow-up и трекер за секунды. По умолчанию данные только в браузере.
-          Свой ИИ-ключ — снимок поиска уходит к провайдеру API.
+          Утро начинается с «Сегодня»: цель, follow-up, черновики. Radar и расширение на hh — письмо и трекер за секунды.
+          По умолчанию данные только в браузере.
         </p>
         <div className="hero-cta">
-          <Link className="btn accent" to="/app/radar">
-            Запустить Radar
+          <Link className="btn accent" to="/app">
+            Открыть Сегодня
           </Link>
-          <Link className="btn ghost" to="/app">
-            В трекер
+          <Link className="btn ghost" to="/app/radar">
+            Vacancy Radar
           </Link>
         </div>
       </section>
@@ -136,7 +137,7 @@ export function Landing() {
               <li>Расширение hh / Хабр</li>
             </ul>
             <Link className="btn ghost" to="/app">
-              Начать
+              Сегодня
             </Link>
           </article>
           <article className="featured">
@@ -144,7 +145,7 @@ export function Landing() {
             <h3>Pro</h3>
             <p className="pro-price">990 ₽</p>
             <ul>
-              <li>Пять шаблонов под ситуацию</li>
+              <li>Письма под вакансию: пересечения списком</li>
               <li>Все follow-up письма сразу в буфер</li>
               <li>Разбор коуча + ритм недели — копируются</li>
               <li>Ключ в Telegram, живёт в этом браузере</li>
@@ -154,6 +155,7 @@ export function Landing() {
             </Link>
           </article>
         </div>
+        <LetterPreview compact />
       </section>
 
       <section className="cta container">

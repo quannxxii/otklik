@@ -19,6 +19,7 @@ function mount() {
         <div class="otklik-tags" id="otklik-tags"></div>
         <div class="otklik-actions">
           <button type="button" class="otklik-btn accent" id="otklik-pack">Пакет: письмо + трекер</button>
+          <button type="button" class="otklik-btn ok" id="otklik-sent" hidden>Отправил — отметить</button>
           <button type="button" class="otklik-btn ghost" id="otklik-copy">Только письмо</button>
           <button type="button" class="otklik-btn ghost" id="otklik-draft">Черновик</button>
           <button type="button" class="otklik-btn ghost" id="otklik-fill">В форму</button>
@@ -32,6 +33,9 @@ function mount() {
 
   const panel = root.querySelector("#otklik-panel");
   const toast = root.querySelector("#otklik-toast");
+  const sentBtn = root.querySelector("#otklik-sent");
+  let pendingId = null;
+
   root.querySelector("#otklik-fab").onclick = () => {
     panel.classList.toggle("open");
     if (panel.classList.contains("open")) refresh();
@@ -61,6 +65,11 @@ function mount() {
     toast.classList.toggle("otklik-warn", Boolean(warn));
   }
 
+  function setPending(id) {
+    pendingId = id || null;
+    sentBtn.hidden = !pendingId;
+  }
+
   async function context() {
     const scraped = C.scrapePage();
     const res = await ask("GET_STATE");
@@ -74,10 +83,16 @@ function mount() {
       profile,
       matched: match.matched.join(", "),
     });
-    const dup = (state.apps || []).some(
-      (a) => a.url === parsed.url || (a.company && parsed.company && a.company.toLowerCase() === parsed.company.toLowerCase() && a.role === parsed.role),
+    const existing = (state.apps || []).find(
+      (a) =>
+        (a.url && parsed.url && a.url.split("?")[0] === parsed.url.split("?")[0]) ||
+        (a.company &&
+          parsed.company &&
+          a.company.toLowerCase() === parsed.company.toLowerCase() &&
+          a.role === parsed.role),
     );
-    return { scraped, state, profile, match, parsed, letter, dup };
+    const dup = Boolean(existing);
+    return { scraped, state, profile, match, parsed, letter, dup, existing };
   }
 
   async function refresh() {
@@ -89,13 +104,22 @@ function mount() {
         <div>${esc(ctx.parsed.role || "роль?")}</div>
         <div>${esc(ctx.parsed.company || "компания?")}</div>
         <div>${esc(ctx.parsed.salary || "вилка —")} · ${esc(ctx.parsed.city || "город —")}</div>
-        ${ctx.dup ? "<div>уже есть в трекере</div>" : ""}
-        ${ctx.profile.onboardingDone || ctx.profile.name ? "" : "<div>открой Отклик и заполни профиль — тогда письмо будет твоим</div>"}
+        ${ctx.dup ? `<div>уже в трекере · ${esc(ctx.existing.status || "?")}</div>` : ""}
+        <div class="${ctx.profile.name || (ctx.state.apps || []).length ? "otklik-sync-ok" : "otklik-sync-warn"}">
+          ${
+            ctx.profile.name || (ctx.state.apps || []).length
+              ? `синк · ${(ctx.state.apps || []).length} в трекере`
+              : "открой otklik-gamma.vercel.app — иначе профиль пустой"
+          }
+        </div>
+        ${ctx.profile.onboardingDone || ctx.profile.name ? "" : "<div>заполни профиль в Отклике — тогда письмо будет твоим</div>"}
       `;
       root.querySelector("#otklik-tags").innerHTML = ctx.match.matched
         .slice(0, 8)
         .map((m) => `<span class="otklik-tag">${esc(m)}</span>`)
         .join("");
+      if (ctx.existing && ctx.existing.status === "draft") setPending(ctx.existing.id);
+      else if (!ctx.existing) setPending(null);
       show("");
     } catch (e) {
       show(String(e.message || e), true);
@@ -109,10 +133,19 @@ function mount() {
       const ok = C.fillLetterBox(ctx.letter);
       if (!ok) show("Поля письма на странице нет — сначала нажми «Откликнуться» у hh, потом «В форму».", true);
     }
-    if (ctx.dup && status !== "draft") {
-      show("Такой отклик уже в трекере. Письмо скопировано — отправь вручную.");
-      C.highlightApply();
-      return;
+    if (ctx.existing) {
+      if (status === "draft" && ctx.existing.status === "draft") {
+        C.highlightApply();
+        setPending(ctx.existing.id);
+        show(`Уже черновик.${doCopy ? " Письмо в буфере." : ""} После отправки на hh — «Отправил».`);
+        return;
+      }
+      if (status !== "draft") {
+        show("Такой отклик уже в трекере. Письмо скопировано — отправь вручную.");
+        C.highlightApply();
+        if (ctx.existing.status === "draft") setPending(ctx.existing.id);
+        return;
+      }
     }
     const app = C.buildApp({
       parsed: ctx.parsed,
@@ -128,14 +161,36 @@ function mount() {
     }
     C.highlightApply();
     const extra = doCopy ? " Письмо в буфере." : "";
-    show(
-      status === "sent"
-        ? `Записано как отправлено.${extra}`
-        : `Черновик в трекере.${extra} На hh жми «Откликнуться» сам.`,
-    );
+    if (status === "draft") {
+      setPending(app.id);
+      show(`Черновик в трекере.${extra} На hh жми «Откликнуться», потом «Отправил».`);
+    } else {
+      setPending(null);
+      show(`Записано как отправлено.${extra}`);
+    }
+  }
+
+  async function markSent() {
+    if (!pendingId) {
+      const ctx = await context();
+      if (ctx.existing && ctx.existing.status === "draft") setPending(ctx.existing.id);
+    }
+    if (!pendingId) {
+      show("Сначала пакет или черновик — потом отметь отправку.", true);
+      return;
+    }
+    const res = await ask("MARK_SENT", { id: pendingId });
+    if (!res || !res.ok) {
+      show(res && res.error ? res.error : "Не обновилось. Открой сайт Отклик для синка.", true);
+      return;
+    }
+    setPending(null);
+    show("Отмечено как отправлено. Follow-up поставится сам.");
+    refresh();
   }
 
   root.querySelector("#otklik-pack").onclick = () => void save("draft", true, true);
+  root.querySelector("#otklik-sent").onclick = () => void markSent();
   root.querySelector("#otklik-copy").onclick = async () => {
     const ctx = await context();
     await copy(ctx.letter);

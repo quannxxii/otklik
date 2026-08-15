@@ -318,10 +318,12 @@
   max-width: 14em;
 }
 
-.pricing-lead {
-  max-width: 36em;
-  margin-bottom: 22px;
-  font-size: 16px;
+.pricing .letter-preview {
+  margin-top: 18px;
+}
+
+.pricing .letter-preview {
+  margin-top: 18px;
 }
 
 .pricing-grid {

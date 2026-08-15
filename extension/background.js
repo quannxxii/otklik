@@ -28,6 +28,21 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
         sendResponse({ ok: true, count: apps.length });
         return;
       }
+      if (msg.type === "MARK_SENT") {
+        const state = await C.chromeGet();
+        const apps = C.markAppSent(state.apps || [], msg.id, (state.profile && state.profile.followDays) || 5);
+        if (!apps) {
+          sendResponse({ ok: false, error: "черновик не найден" });
+          return;
+        }
+        await C.chromeSet({
+          apps,
+          profile: { ...C.DEFAULT_PROFILE, ...(state.profile || {}) },
+          templates: state.templates && state.templates.length ? state.templates : C.DEFAULT_TEMPLATES,
+        });
+        sendResponse({ ok: true });
+        return;
+      }
       if (msg.type === "MERGE_STATE") {
         const chromeState = await C.chromeGet();
         const merged = C.mergeState(chromeState, msg.state || {});

@@ -38,7 +38,7 @@ export function WeekPage() {
                   key={`${item.kind}-${item.app.id}`}
                   type="button"
                   className={`week-item ${item.kind}`}
-                  onClick={() => navigate(`/app?open=${item.app.id}`)}
+                  onClick={() => navigate(`/app/tracker?open=${item.app.id}`)}
                 >
                   <span className="mono tiny">{item.label}</span>
                   <b>{item.app.company}</b>

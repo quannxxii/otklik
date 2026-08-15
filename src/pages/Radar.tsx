@@ -66,7 +66,7 @@ export function RadarPage() {
     if (!app) return;
     setApps((prev) => [...prev, app]);
     showToast("Черновик в трекере");
-    navigate("/app");
+    navigate("/app/tracker");
   }
 
   async function packageApply() {
@@ -87,7 +87,7 @@ export function RadarPage() {
     setApps((prev) => [...prev, app]);
     if (app.url) window.open(app.url, "_blank", "noopener,noreferrer");
     showToast("Письмо в буфере, черновик в трекере. На площадке жми «Откликнуться» сам.");
-    navigate("/app");
+    navigate("/app/tracker");
   }
 
   async function copyTargeted() {

@@ -57,6 +57,18 @@ window.addEventListener("message", (e) => {
   if (e.source !== window) return;
   if (e.origin !== window.location.origin) return;
   if (e.data && e.data.type === "OTKLIK_WEB_CHANGED") void syncFromPage();
+  if (e.data && e.data.type === "OTKLIK_WEB_PING") {
+    void C.chromeGet().then((state) => {
+      window.postMessage(
+        {
+          type: "OTKLIK_EXT_PONG",
+          at: Date.now(),
+          apps: (state.apps || []).length,
+        },
+        window.location.origin,
+      );
+    });
+  }
 });
 
 chrome.storage.onChanged.addListener((changes, area) => {
